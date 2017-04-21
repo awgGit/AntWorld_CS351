@@ -13,6 +13,7 @@ import javax.swing.*;
 import antworld.common.AntData;
 import antworld.server.AntWorld;
 import antworld.server.Cell;
+import antworld.server.FoodSpawnSite;
 import antworld.server.Nest;
 import antworld.common.AntAction.AntState;
 
@@ -261,6 +262,7 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
             double x = ant.gridX - (int) (antScale / 2);
             double y = ant.gridY - (int) (antScale / 2);
             Rectangle2D.Double shape = new Rectangle2D.Double(x, y, antScale, antScale);
+            System.out.println("Drawing an ant");
             gfx.fill(shape);
 
             // int xx = (int)((mouseX - translateX)/scale);
@@ -292,6 +294,12 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
             
           }
         }
+      }
+
+      for( FoodSpawnSite fss : antworld.getFoodSpawnList() )
+      {
+        gfx.setColor( Color.RED );
+        gfx.drawRect( fss.getLocationX(), fss.getLocationY(), 1, 1 );
       }
 
 /*
