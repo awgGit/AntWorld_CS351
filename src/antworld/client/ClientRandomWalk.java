@@ -1,23 +1,15 @@
 package antworld.client;
 
+import antworld.common.*;
+import antworld.common.AntAction.AntActionType;
+import antworld.common.AntAction.AntState;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Random;
-
-import antworld.common.AntType;
-import antworld.common.PacketToClient;
-import antworld.common.PacketToServer;
-import antworld.common.AntAction;
-import antworld.common.AntAction.AntState;
-import antworld.common.AntData;
-import antworld.common.Constants;
-import antworld.common.Direction;
-import antworld.common.NestNameEnum;
-import antworld.common.TeamNameEnum;
-import antworld.common.AntAction.AntActionType;
 
 
 /**
@@ -56,6 +48,7 @@ import antworld.common.AntAction.AntActionType;
 
 
 //Test commit
+// Test commit #2
 
 
 
