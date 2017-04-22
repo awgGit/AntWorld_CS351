@@ -10,7 +10,7 @@ import java.io.Serializable;
 
 public abstract class GameObject implements Serializable
 {
-  public enum GameObjectType {ANT, FOOD, WATER};
+  public enum GameObjectType {ANT, FOOD, WATER}
   
   public GameObjectType type;
 

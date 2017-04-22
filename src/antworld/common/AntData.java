@@ -100,6 +100,7 @@ public class AntData extends GameObject implements Comparable<AntData>, Serializ
     this.teamName = teamName;
     health = type.getMaxHealth();
     action = new AntAction(AntActionType.BIRTH);
+    this.type = GameObjectType.ANT;
   }
   
   

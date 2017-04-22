@@ -345,6 +345,7 @@ public class AntWorld implements ActionListener
     from.setGameObject(null);
     to.setGameObject(ant);
 
+
     ant.gridX = to.getLocationX();
     ant.gridY = to.getLocationY();
 

@@ -102,7 +102,6 @@ public class AntMethods
       //Note: it is ok for target ant to be self
       AntData targetAnt = getTargetAnt(world, ant, action);
       if (targetAnt == null) return AntActionType.NOOP;
-      
       if (targetAnt.health >= targetAnt.antType.getMaxHealth()) return AntActionType.NOOP;
       int waterUnits = ant.antType.getHealWaterUnitsPerTick(AntState.OUT_AND_ABOUT);
       if (waterUnits > ant.carryUnits) waterUnits = ant.carryUnits;

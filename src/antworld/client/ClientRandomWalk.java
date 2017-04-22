@@ -45,13 +45,6 @@ import java.util.Random;
  */
 
 
-
-
-//Test commit
-// Test commit #2
-
-
-
 public class ClientRandomWalk
 {
   private static final boolean DEBUG = true;
@@ -123,7 +116,7 @@ public class ClientRandomWalk
     else
     {
       //Spawn ants of whatever type you want
-      int numAnts = 2; //Constants.INITIAL_FOOD_UNITS / AntType.TOTAL_FOOD_UNITS_TO_SPAWN;
+      int numAnts = 1; //Constants.INITIAL_FOOD_UNITS / AntType.TOTAL_FOOD_UNITS_TO_SPAWN;
       for (int i=0; i<numAnts; i++)
       {
         AntType type = AntType.EXPLORER; //AntType.values()[random.nextInt(AntType.SIZE)]; //AntType.values()[random.nextInt(AntType.SIZE)];
@@ -221,10 +214,6 @@ public class ClientRandomWalk
 
       if (DEBUG) System.out.println("ClientRandomWalk: chooseActions: " + myNestName);
 
-      for (AntData ant: packetIn.myAntList)
-      {
-        System.out.println("Ant{"+ ant.id + "}" + "(" + ant.gridX + ", " + ant.gridY + ")");
-      }
       PacketToServer packetOut = chooseActionsOfAllAnts(packetIn);
       send(packetOut);
     }
@@ -288,16 +277,14 @@ public class ClientRandomWalk
   private boolean dropOffAtNest( AntData ant, AntAction action, NestData my_nest_data )
   {
 
-    /*
-    if( ant.gridY < my_nest_data.centerY && ant.carryUnits != 0)
-    {
-      action.type = AntActionType.DROP;
-      action.direction = Direction.WEST;
-      action.quantity = 1;
-      return true;
-    }
+//    if( ant.gridY < my_nest_data.centerY && ant.carryUnits != 0)
+//    {
+//      action.type = AntActionType.DROP;
+//      action.direction = Direction.WEST;
+//      action.quantity = 1;
+//      return true;
+//    }
     return false;
-    */
     //if( ant.gridY < 1280 ) System.out.println("So we tried to drop off...");
 
     /*Direction dir = Direction.NORTH;
@@ -305,7 +292,6 @@ public class ClientRandomWalk
     action.direction = dir;
     action.quantity = 1;
     return ant.gridX < 1280;*/
-    return false;
   }
 
   private boolean attackAdjacent(AntData ant, AntAction action)
@@ -320,21 +306,27 @@ public class ClientRandomWalk
 
   private boolean goHomeIfCarryingOrHurt(AntData ant, AntAction action)
   {
-    //Direction dir = Direction.NORTH;
-    //action.type = AntActionType.MOVE;
-    //action.direction = dir;
-    //System.out.println( ant.carryUnits );
+    if(ant.carryUnits > 0)
+    {
+      Direction dir = Direction.NORTH;
+      action.type = AntActionType.MOVE;
+      action.direction = dir;
+      return true;
+    }
     return false;
   }
 
   private boolean pickUpWater(AntData ant, AntAction action)
   {
-    Direction dir = Direction.SOUTH;
-    action.type = AntActionType.PICKUP;
-    action.quantity = 10;
-    action.direction = dir;
-    return(Constants.random.nextDouble() > 0.5); // 1/2 time we'll try to pick up water.
-    //return false;
+    if(ant.carryUnits < ant.antType.getCarryCapacity())
+    {
+      Direction dir = Direction.SOUTH;
+      action.type = AntActionType.PICKUP;
+      action.quantity = ant.antType.getCarryCapacity();
+      action.direction = dir;
+      return (Constants.random.nextDouble() > 0.5); // 1/2 time we'll try to pick up water.
+    }
+    return false;
   }
 
   private boolean goToEnemyAnt(AntData ant, AntAction action)
@@ -352,12 +344,24 @@ public class ClientRandomWalk
     return false;
   }
 
+  private boolean heal(AntData ant, AntAction action)
+  {
+    if(ant.health < ant.antType.getMaxHealth() - 3)
+    {
+
+      action.type = AntActionType.HEAL;
+      action.direction = null;
+      action.quantity = 1;
+      return true;
+    }
+    return false;
+  }
+
   private boolean goExplore(AntData ant, AntAction action)
   {
-    Direction dir = Direction.SOUTH;
+    Direction dir = Direction.SOUTH; //Direction.getRandomDir();
     action.type = AntActionType.MOVE;
     action.direction = dir;
-    System.out.println("id=" + ant.id + "x=" + ant.gridX + ", y=" + ant.gridY);
     return true;
   }
 
@@ -380,10 +384,10 @@ public class ClientRandomWalk
     //   precedence.
     if (exitNest(ant, action)) return action;
     if( dropOffAtNest(ant,action,data.nestData[data.myNest.ordinal()])) return action;
+    if(heal(ant, action)) return action;
     if (goHomeIfCarryingOrHurt(ant, action)) return action;
     if (pickUpWater(ant, action)) return action;
     if (goExplore(ant, action)) return action;
-
     return action;
   }
 
