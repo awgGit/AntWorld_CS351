@@ -71,9 +71,10 @@ public class PacketToClient implements Serializable
     this.myNest = myNest;
   }
 
-
+  // Also not used...
   public PacketToClient(PacketToClient source)
   {
+
     myNest = source.myNest;
     tick = source.tick;
     tickTime = source.tickTime;

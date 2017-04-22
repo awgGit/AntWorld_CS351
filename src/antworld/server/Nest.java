@@ -56,6 +56,7 @@ public class Nest extends NestData implements Serializable
    */
   public synchronized void setClient(CommToClient client, PacketToServer packetIn)
   {
+    System.out.println("AWG: SET CLIENT");
     team = packetIn.myTeam;
 
     if (status == NestStatus.EMPTY)
@@ -65,12 +66,15 @@ public class Nest extends NestData implements Serializable
       waterInNest = Constants.INITIAL_NEST_WATER_UNITS;
     }
 
+    int i = 0;
     for (AntData ant : packetIn.myAntList)
     {
+      System.out.println("Spawning ant: " + i);
       if (ant.id != AntData.UNKNOWN_ANT_ID) continue;
       if (ant.action.type != AntActionType.BIRTH) continue;
       if (ant.antType == null) continue;
       spawnAnt(ant.antType);
+      ant.id = i++; // Have to *set* ant ID to avoid spawning twice.
     }
 
     this.client = client;
@@ -110,6 +114,7 @@ public class Nest extends NestData implements Serializable
       ant.state = AntState.UNDERGROUND;
       ant.gridX = centerX;
       ant.gridY = centerY;
+
     }
   }
 
@@ -178,10 +183,10 @@ public class Nest extends NestData implements Serializable
 
     foodInNest -= antType.TOTAL_FOOD_UNITS_TO_SPAWN;
     AntData ant = AntMethods.createAnt(antType, nestName, team);
-    //System.out.println(ant);
 
     ant.gridX = centerX;
     ant.gridY = centerY;
+
     antCollection.put(ant.id, ant);
     return ant;
   }
@@ -291,6 +296,11 @@ public class Nest extends NestData implements Serializable
           continue;
         }
         serverAnt.action.type = AntMethods.update(world, serverAnt, clientAnt.action);
+
+        // AWG: Added this but it doesn't seem to do anything : because we're updating the *sent* client ant.
+        //clientAnt.gridX = serverAnt.gridX;
+        //clientAnt.gridY = serverAnt.gridY;
+
       }
     }
   }
@@ -345,7 +355,7 @@ public class Nest extends NestData implements Serializable
     //commData.enemyAntList = new ArrayList<>();
     //commData.foodSet = new ArrayList();
 
-
+    // AWG: what we're sending is the values for antCollection.
     for (AntData ant : antCollection.values())
     {
       if (ant.action.type == AntActionType.BUSY) continue;

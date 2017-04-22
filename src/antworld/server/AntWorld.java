@@ -136,7 +136,7 @@ public class AntWorld implements ActionListener
 
     if (DEBUG) System.out.println("AntWorld =====> Tick=" + gameTick + " (" + gameTime + ")");
 
-    if (random.nextDouble() < 0.01)
+    if (random.nextDouble() < 0.9) // AWG: Changed to 0.9 so it happens frequently...
     {
       int foodSiteIdx = random.nextInt(foodSpawnList.size());
       foodSpawnList.get(foodSiteIdx).spawn(this);
@@ -176,9 +176,6 @@ public class AntWorld implements ActionListener
       myNest.updateReceivePacket(this);
     }
 
-
-
-
     //Newly dead ants are left for one turn in the ant list, but in the world,
     //  they are immediately replaced with food piles.
     for (Nest myNest : nestList)
@@ -200,15 +197,12 @@ public class AntWorld implements ActionListener
       myNest.updateSendPacket(this, nestDataList);
     }
 
-
     //Update display, if not headless.
     if (drawPanel != null)
     { drawPanel.update();
       dataViewer.update(nestList);
     }
   }
-
-
 
   /*
   public NestData[] createNestDataList()
@@ -237,16 +231,11 @@ public class AntWorld implements ActionListener
     return null;
   }
 
-
   /**
    * gameTime is the time in seconds from the start of the game to the start of the current gameTick.
    * @return time in seconds
    */
   public double getGameTime() {return gameTime;}
-
-
-
-
   public int getGameTick()
   {
     return gameTick;
@@ -352,10 +341,10 @@ public class AntWorld implements ActionListener
   }
 
 
-
-
   public void moveAnt(AntData ant, Cell from, Cell to)
   {
+
+
     from.setGameObject(null);
     to.setGameObject(ant);
 
@@ -431,7 +420,7 @@ public class AntWorld implements ActionListener
 
   private void createFoodSpawnSite()
   {
-    int totalSitesToSpawn = 3 + random.nextInt(3);
+    int totalSitesToSpawn = 30 + random.nextInt(3); // AWG: Increased number of spawn sites
     int xRange = worldWidth/totalSitesToSpawn;
     while (totalSitesToSpawn > 0)
     {

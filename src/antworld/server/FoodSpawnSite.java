@@ -44,6 +44,7 @@ public class FoodSpawnSite implements Serializable
 
   public void spawn(AntWorld world)
   {
+    System.out.println("AWG: Spawned food at site.");
     if (!needSpawn) return;
     if (activeFoodPileCount >= MAX_SIMULTANEOUS_PILES_FROM_SITE) return;
     
@@ -58,7 +59,7 @@ public class FoodSpawnSite implements Serializable
       for (int i=0; i<didNestGatherFromThisSiteRecently.length; i++) didNestGatherFromThisSiteRecently[i] = false;
     }
     
-    int spawnGoal = 1 + siteGatherCount/2;
+    int spawnGoal = 100 + siteGatherCount/2;
     int quantityMultiplier = 1;
     if (siteGatherCount > 2) quantityMultiplier = 3;
     else if (siteGatherCount > 1) quantityMultiplier = 2;
@@ -68,6 +69,8 @@ public class FoodSpawnSite implements Serializable
 
     while(spawnCount < spawnGoal)
     {
+
+      System.out.println("AWG: Spawncount: " + spawnCount + " spawnGoal: " + spawnGoal);
       int count = (20 + AntWorld.random.nextInt(400)); 
       
       x = locationX + random.nextInt(SPAWN_RADIUS) - random.nextInt(SPAWN_RADIUS);

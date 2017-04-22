@@ -43,6 +43,7 @@ public class PacketToServer implements Serializable
     this.myTeam = myTeam;
   }
 
+  // Not used
   public PacketToServer(PacketToServer source)
   {
     myTeam = source.myTeam;

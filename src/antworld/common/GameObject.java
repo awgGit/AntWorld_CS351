@@ -17,7 +17,8 @@ public abstract class GameObject
    * exactly one pixel. No two game objects may occupy the same pixel at the
    * same time. NOTE: food being carried by an ant is part of the ant game object.
    * */
-  public int gridX, gridY;
+  public int gridX = 3;
+  public int gridY = 5;
 
 
   public int getRGB()

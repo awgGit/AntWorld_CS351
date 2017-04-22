@@ -116,6 +116,7 @@ public class AntData extends GameObject implements Comparable<AntData>, Serializ
     
     gridX = source.gridX;
     gridY = source.gridY;
+
     state = source.state;
 
     antType = source.antType;

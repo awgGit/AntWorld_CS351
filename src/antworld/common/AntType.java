@@ -8,6 +8,7 @@ import antworld.common.AntAction.AntState;
  */
 public enum AntType
 {
+
   WORKER
   {
     public int getCarryCapacity() {return super.getCarryCapacity()*2;}
@@ -15,7 +16,6 @@ public enum AntType
     { return super.getHealWaterUnitsPerTick(state)*2;
     }
   },
-
 
   EXPLORER
     {
@@ -25,7 +25,6 @@ public enum AntType
 
       public int getVisionRadius() {return super.getVisionRadius()*2;}
     },
-
 
   WARRIOR
   {

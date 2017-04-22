@@ -5,10 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-import antworld.common.NestNameEnum;
-import antworld.common.PacketToServer;
-import antworld.common.PacketToClient;
-import antworld.common.TeamNameEnum;
+import antworld.common.*;
 import antworld.server.Nest.NestStatus;
 
 public class CommToClient extends Thread
@@ -26,10 +23,6 @@ public class CommToClient extends Thread
   private volatile int currentPacketInTick;
   private volatile int currentPacketOutTick;
   private String errorMsg;
-
-  
-
- 
   
   public CommToClient(Server server, Socket client)
   {
@@ -72,7 +65,7 @@ public class CommToClient extends Thread
           }
           catch (InterruptedException e) {}
         }
-        send(currentPacketOut);
+        send(currentPacketOut); // It only gets sent a couple times, and then someone else obtains 'this' and we don't get to send.
         currentPacketOutTick = 0;
       }
 
@@ -216,6 +209,7 @@ public class CommToClient extends Thread
       }
 
       if (DEBUG) System.out.println("CommToClient.send:\n" + data);
+
       clientWriter.writeObject(data);
       clientWriter.flush();
       clientWriter.reset();
