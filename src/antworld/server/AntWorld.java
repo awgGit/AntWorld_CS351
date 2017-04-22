@@ -14,7 +14,6 @@ import javax.imageio.ImageIO;
 import antworld.common.AntAction;
 import antworld.common.AntData;
 import antworld.common.Constants;
-import antworld.common.Direction;
 import antworld.common.FoodData;
 import antworld.common.GameObject;
 import antworld.common.LandType;
@@ -65,7 +64,7 @@ public class AntWorld implements ActionListener
 
     //********************* Note On map replacement  **************************
     //The map must have at least a one pixel a boarder of water: LandType.WATER.getColor.
-    BufferedImage map = Util.loadImage("AntWorld.png", window);
+    BufferedImage map = Util.loadImage("resources/AntWorld.png", window);
     worldWidth = map.getWidth();
     worldHeight = map.getHeight();
 
@@ -141,8 +140,6 @@ public class AntWorld implements ActionListener
       int foodSiteIdx = random.nextInt(foodSpawnList.size());
       foodSpawnList.get(foodSiteIdx).spawn(this);
     }
-
-
 
     //Update non-interactive events of all ants in world. Non-interactive events include:
     //    Attrition damage

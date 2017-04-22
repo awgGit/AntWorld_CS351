@@ -54,7 +54,6 @@ public class CommToClient extends Thread
         break;
       }
 
-
       synchronized(this)
       {
         while (currentPacketOutTick <= currentPacketInTick)
@@ -97,7 +96,6 @@ public class CommToClient extends Thread
     currentPacketIn = null;
     currentPacketInTick = gameTick;
     return packet;
-
   }
 
 
@@ -147,8 +145,6 @@ public class CommToClient extends Thread
       //currentPacketInTick  = server.getGameTick();
     }
 
-
-      
     System.out.println("Server: Client Accepted: nest="+myNest.nestName+", team="+myNest.team);
   }
 

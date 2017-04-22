@@ -6,7 +6,9 @@ import antworld.common.NestNameEnum;
 import antworld.server.AntWorld;
 import antworld.server.FoodSpawnSite;
 
-public abstract class GameObject
+import java.io.Serializable;
+
+public abstract class GameObject implements Serializable
 {
   public enum GameObjectType {ANT, FOOD, WATER};
   
@@ -17,8 +19,8 @@ public abstract class GameObject
    * exactly one pixel. No two game objects may occupy the same pixel at the
    * same time. NOTE: food being carried by an ant is part of the ant game object.
    * */
-  public int gridX = 3;
-  public int gridY = 5;
+  public int gridX;
+  public int gridY;
 
 
   public int getRGB()

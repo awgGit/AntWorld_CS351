@@ -4,6 +4,7 @@ import java.awt.Container;
 import java.awt.MediaTracker;
 import java.awt.image.BufferedImage;
 import java.net.URL;
+import java.nio.file.Paths;
 
 import javax.imageio.ImageIO;
 
@@ -33,9 +34,7 @@ public class Util
 
     try
     { // System.out.println("imagePath="+imagePath);
-
-      imagePath = "resources/" + imagePath;
-      fileURL = new URL("file:" + imagePath);
+      fileURL = Util.class.getClassLoader().getResource(imagePath);
 
       loadedImage = ImageIO.read(fileURL);
 
@@ -51,9 +50,7 @@ public class Util
     }
     return loadedImage;
   }
-  
-  
-  
+
   public static int manhattanDistance(int x1, int y1, int x2, int y2)
   {
     int dx = Math.abs(x2 - x1);
