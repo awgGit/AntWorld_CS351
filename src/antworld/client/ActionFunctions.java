@@ -16,7 +16,7 @@ public class ActionFunctions
   //  Active action functions
   // =========================
   //<editor-fold desc="Active Action Functions">
-  protected static boolean exitNest(AntData ant, AntAction action, PacketToClient ptc)
+  static boolean exitNest(AntData ant, AntAction action, PacketToClient ptc)
   {
     //=============================================================================
     // This method sets the given action to EXIT_NEST if and only if the given
@@ -32,11 +32,10 @@ public class ActionFunctions
     }
     return false;
   }
-  protected static  boolean heal(AntData ant, AntAction action)
+  static  boolean heal(AntData ant, AntAction action)
   {
     if(ant.health < ant.antType.getMaxHealth() - 3)
     {
-
       action.type = AntAction.AntActionType.HEAL;
       action.direction = null;
       action.quantity = 1;
@@ -44,7 +43,7 @@ public class ActionFunctions
     }
     return false;
   }
-  protected static  boolean pickUpWater(AntData ant, AntAction action)
+  static  boolean pickUpWater(AntData ant, AntAction action)
   {
     if(ant.carryUnits < ant.antType.getCarryCapacity())
     {
@@ -57,7 +56,7 @@ public class ActionFunctions
     return false;
   }
   // Try to attack adjacent enemies, if present.
-  protected static  boolean attackAdjacent(AntData ant, AntAction action, PacketToClient ptc)
+  static  boolean attackAdjacent(AntData ant, AntAction action, PacketToClient ptc)
   {
     Direction dir = adjacentToEnemy(ant, ptc.enemyAntList);
     if( dir != null )
@@ -69,7 +68,7 @@ public class ActionFunctions
     return false;
   }
   // Try to pick up food adjacent food, but only if it's there & we're able to carry it.
-  protected static  boolean pickUpFoodAdjacent(AntData ant, AntAction action, PacketToClient ptc)
+  static  boolean pickUpFoodAdjacent(AntData ant, AntAction action, PacketToClient ptc)
   {
     Direction dir = adjacentToFood(ant, ptc.foodList );
     if( dir != null && ant.carryUnits < ant.antType.getCarryCapacity())
@@ -81,12 +80,23 @@ public class ActionFunctions
     }
     return false;
   }
-  protected static  boolean goExplore(AntData ant, AntAction action)
+  static  boolean goExplore(AntData ant, AntAction action)
   {
-    Direction dir = Direction.SOUTH; //Direction.getRandomDir();
+    Direction dir = Direction.getRandomDir();
     action.type = AntAction.AntActionType.MOVE;
     action.direction = dir;
     return true;
+  }
+  static  boolean goHomeIfCarryingOrHurt(AntData ant, AntAction action)
+  {
+    if(ant.carryUnits > 0)
+    {
+      Direction dir = Direction.NORTH;
+      action.type = AntAction.AntActionType.MOVE;
+      action.direction = dir;
+      return true;
+    }
+    return false;
   }
   //</editor-fold>
 
@@ -107,10 +117,6 @@ public class ActionFunctions
     return false;
   }
   protected static  boolean dropOffAtNest( AntData ant, AntAction action, PacketToClient ptc)
-  {
-    return false;
-  }
-  protected static  boolean goHomeIfCarryingOrHurt(AntData ant, AntAction action)
   {
     return false;
   }

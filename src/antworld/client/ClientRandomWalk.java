@@ -54,14 +54,12 @@ public class ClientRandomWalk
   private int centerX, centerY;
   private Socket clientSocket;
 
-
   /**
   * A random number generator is created in Constants. Use it.
   * Do not create a new generator every time you want a random number nor
   * even in every class were you want a generator.
   */
   private static Random random = Constants.random;
-
   public ClientRandomWalk(String host, TeamNameEnum team, boolean reconnect)
   {
     myTeam = team;
@@ -73,7 +71,6 @@ public class ClientRandomWalk
     mainGameLoop();
     closeAll();
   }
-
   private boolean openConnection(String host, boolean reconnect)
   {
     try
@@ -124,7 +121,6 @@ public class ClientRandomWalk
     return true;
 
   }
-
   public void closeAll()
   {
     System.out.println("ClientRandomWalk.closeAll()");
@@ -215,7 +211,6 @@ public class ClientRandomWalk
       send(packetOut);
     }
   }
-
   private void send(PacketToServer packetOut)
   {
     try
@@ -233,7 +228,6 @@ public class ClientRandomWalk
       System.exit(0);
     }
   }
-
   private PacketToServer chooseActionsOfAllAnts(PacketToClient packetIn)
   {
     PacketToServer packetOut = new PacketToServer(myTeam);
@@ -270,6 +264,7 @@ public class ClientRandomWalk
     if (ActionFunctions.exitNest( ant, action, data )) return action;
     if (ActionFunctions.heal( ant, action )) return action;
     if (ActionFunctions.pickUpWater(ant,action)) return action;
+    if (ActionFunctions.goHomeIfCarryingOrHurt(ant,action)) return action;
     if (ActionFunctions.attackAdjacent(ant,action,data)) return action;
     if( ActionFunctions.pickUpFoodAdjacent(ant,action,data)) return action;
     if (ActionFunctions.goExplore( ant, action )) return action;
