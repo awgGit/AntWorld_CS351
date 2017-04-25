@@ -11,6 +11,10 @@ public class Cell
 {
   private final int height;
   private final int x, y;
+  public int lookedAtTick = 0;
+  public NestNameEnum lookedAtNest = null;
+
+
   
   private LandType landType;
   private Nest nest = null;
@@ -39,14 +43,21 @@ public class Cell
   public FoodData getFoodOrWater()
   {
     if (gameObject == null) return null;
-    if (gameObject.type == GameObjectType.ANT) return null;
+    if (gameObject.objType == GameObjectType.ANT) return null;
     return (FoodData) gameObject;
+  }
+
+  public int getFoodUnits()
+  {
+    if (gameObject.objType != GameObjectType.FOOD) return 0;
+    FoodData food = (FoodData) gameObject;
+    return food.quantity;
   }
 
   public AntData getAnt()
   {
     if (gameObject == null) return null;
-    if (gameObject.type != GameObjectType.ANT) return null;
+    if (gameObject.objType != GameObjectType.ANT) return null;
     return (AntData) gameObject;
   }
   
@@ -68,10 +79,7 @@ public class Cell
   { this.nest = nest;
     this.landType = LandType.NEST;
   }
-  
-  public void setLandType(LandType landType)
-  { this.landType = landType;
-  }
+
   
   public int getRGB()
   { 

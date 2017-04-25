@@ -28,7 +28,7 @@ public class PacketToServer implements Serializable
    * reply will include a full list of all ants belonging to the nest. This is useful
    * when the client reconnects after crashing.
    */
-  public volatile ArrayList<AntData> myAntList = new ArrayList<AntData>();
+  public volatile ArrayList<AntData> myAntList = new ArrayList<>();
 
 
   /**
@@ -48,7 +48,7 @@ public class PacketToServer implements Serializable
   {
     myTeam = source.myTeam;
     timeReceived = source.timeReceived;
-    myAntList = new ArrayList<AntData>();
+    myAntList = new ArrayList<>();
     for (AntData ant : source.myAntList)
     {
       myAntList.add(new AntData(ant));

@@ -1,6 +1,7 @@
 package antworld.server;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -36,7 +37,14 @@ public class Nest extends NestData implements Serializable
   private static final boolean DEBUG = false;
   private static Random random = Constants.random;
 
-  public enum NestStatus {EMPTY, CONNECTED, DISCONNECTED, UNDERGROUND};
+  public enum NestStatus {
+    EMPTY, CONNECTED, DISCONNECTED, UNDERGROUND;
+
+    public String getAsFriendlyString()
+    {
+      return toString().substring(0,1).toUpperCase() + toString().substring(1).toLowerCase();
+    }
+  }
 
   private NestStatus status = NestStatus.EMPTY;
   private CommToClient client = null;
@@ -56,7 +64,6 @@ public class Nest extends NestData implements Serializable
    */
   public synchronized void setClient(CommToClient client, PacketToServer packetIn)
   {
-    System.out.println("AWG: SET CLIENT");
     team = packetIn.myTeam;
 
     if (status == NestStatus.EMPTY)
@@ -66,16 +73,6 @@ public class Nest extends NestData implements Serializable
       waterInNest = Constants.INITIAL_NEST_WATER_UNITS;
     }
 
-    int i = 0;
-    for (AntData ant : packetIn.myAntList)
-    {
-      System.out.println("Spawning ant: " + i);
-      if (ant.id != AntData.UNKNOWN_ANT_ID) continue;
-      if (ant.action.type != AntActionType.BIRTH) continue;
-      if (ant.antType == null) continue;
-      spawnAnt(ant.antType);
-      ant.id = i++; // Have to *set* ant ID to avoid spawning twice.
-    }
 
     this.client = client;
     status = NestStatus.CONNECTED;
@@ -88,11 +85,6 @@ public class Nest extends NestData implements Serializable
    */
   public synchronized void disconnectClient()
   {
-    if (client != null)
-    {
-      client.closeSocket("Server disconnecting");
-      client = null;
-    }
     //Do not change if status is EMPTY or UNDERGROUND
     if (status == NestStatus.CONNECTED) status = NestStatus.DISCONNECTED;
   }
@@ -114,7 +106,6 @@ public class Nest extends NestData implements Serializable
       ant.state = AntState.UNDERGROUND;
       ant.gridX = centerX;
       ant.gridY = centerY;
-
     }
   }
 
@@ -134,7 +125,7 @@ public class Nest extends NestData implements Serializable
 
   /**
    * Adds (or subtracts if quantity is <0) the specified quantity of the
-   * specified type to this nest.
+   * specified objType to this nest.
    * @param type (must be FOOD or WATER, not ANT)
    * @param quantity (units to add or subtract if <0)
    */
@@ -176,17 +167,17 @@ public class Nest extends NestData implements Serializable
   private AntData spawnAnt(AntType antType)
   {
     //System.out.println("Nest.spawnAnt(): " + this);
-    if (foodInNest < antType.TOTAL_FOOD_UNITS_TO_SPAWN)
+    if (foodInNest < AntType.TOTAL_FOOD_UNITS_TO_SPAWN)
     {
       return null;
     }
 
-    foodInNest -= antType.TOTAL_FOOD_UNITS_TO_SPAWN;
+    foodInNest -= AntType.TOTAL_FOOD_UNITS_TO_SPAWN;
     AntData ant = AntMethods.createAnt(antType, nestName, team);
+    //System.out.println(ant);
 
     ant.gridX = centerX;
     ant.gridY = centerY;
-
     antCollection.put(ant.id, ant);
     return ant;
   }
@@ -238,6 +229,7 @@ public class Nest extends NestData implements Serializable
         continue;
       }
 
+      if (ant.action.type == AntActionType.BUSY_ATTACKED) ant.action.type = AntActionType.BUSY;
       if (ant.action.type == AntActionType.MOVE || ant.action.type == AntActionType.BUSY)
       {
         if (ant.action.quantity > 0) ant.action.quantity--;
@@ -265,6 +257,8 @@ public class Nest extends NestData implements Serializable
    */
   public void updateReceivePacket(AntWorld world)
   {
+    if (DEBUG) System.out.println("Nest["+nestName+"].updateReceivePacket()");
+
     PacketToServer packetIn = client.popPacketIn(world.getGameTick());
 
     if (packetIn == null) return;
@@ -296,11 +290,6 @@ public class Nest extends NestData implements Serializable
           continue;
         }
         serverAnt.action.type = AntMethods.update(world, serverAnt, clientAnt.action);
-
-        // AWG: Added this but it doesn't seem to do anything : because we're updating the *sent* client ant.
-        //clientAnt.gridX = serverAnt.gridX;
-        //clientAnt.gridY = serverAnt.gridY;
-
       }
     }
   }
@@ -325,21 +314,15 @@ public class Nest extends NestData implements Serializable
         }
   
         FoodData droppedFood = new FoodData(GameObject.GameObjectType.FOOD, ant.gridX, ant.gridY, foodUnits);
-        world.addFood(null, droppedFood);
+        world.addFood(droppedFood);
         if (DEBUG) System.out.println("Nest[" + nestName +
           "] Ant died: Current Population = " + antCollection.size());
         //Note: an ant may have done some action this tick before dieing.
-        //   This will have been recorded in ant.action.type.
+        //   This will have been recorded in ant.action.objType.
       }
     }
   }
 
-  //public AntData getAntByID(int antId)
-  //{
-  //  tmpAntData.id = antId;
-  //  int index = Collections.binarySearch(antList, tmpAntData);
-  //  return antList.get(index);
-  //}
 
   public void updateSendPacket(AntWorld world, NestData[] nestDataList)
   {
@@ -352,20 +335,21 @@ public class Nest extends NestData implements Serializable
 
     packetOut.tick = world.getGameTick();
     packetOut.tickTime = world.getGameTime();
-    //commData.enemyAntList = new ArrayList<>();
-    //commData.foodSet = new ArrayList();
+    packetOut.enemyAntList = new ArrayList<>();
+    packetOut.foodList = new ArrayList<>();
 
-    // AWG: what we're sending is the values for antCollection.
+
     for (AntData ant : antCollection.values())
     {
+      world.appendVisibleObjects(ant, packetOut.enemyAntList, packetOut.foodList);
+
       if (ant.action.type == AntActionType.BUSY) continue;
       packetOut.myAntList.add(ant);
 
-      //TODO
-      //world.appendAntsInProximity(ant, commData.enemyAntList);
-      //world.appendFoodInProximity(ant, commData.foodSet);
     }
 
+    if (packetOut.enemyAntList.isEmpty())  packetOut.enemyAntList = null;
+    if (packetOut.foodList.isEmpty())  packetOut.foodList = null;
     client.pushPacketOut(packetOut, world.getGameTick());
   }
 }

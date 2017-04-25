@@ -165,7 +165,7 @@ public class AntMethods
         int x = targetCell.getLocationX();
         int y = targetCell.getLocationY();
         FoodData droppedFood = new FoodData(ant.carryType, x, y, ant.carryUnits);
-        world.addFood(null, droppedFood);
+        world.addFood(droppedFood);
       }
 
       ant.carryUnits -= action.quantity;
@@ -192,9 +192,9 @@ public class AntMethods
         groundFood = targetCell.getFoodOrWater();
         if (groundFood == null) return AntActionType.NOOP;
 
-        if ((ant.carryUnits > 0) && (ant.carryType!=groundFood.type)) return AntActionType.NOOP;
+        if ((ant.carryUnits > 0) && (ant.carryType!=groundFood.objType)) return AntActionType.NOOP;
         if (action.quantity > groundFood.quantity) action.quantity = groundFood.quantity;
-        ant.carryType = groundFood.type;
+        ant.carryType = groundFood.objType;
       }
       if (ant.carryUnits + action.quantity > ant.antType.getCarryCapacity()) action.quantity = ant.antType.getCarryCapacity() - ant.carryUnits;
       ant.carryUnits += action.quantity;

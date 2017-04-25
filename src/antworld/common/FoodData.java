@@ -1,7 +1,5 @@
 package antworld.common;
 
-import java.io.Serializable;
-
 /**
  * The Class FoodData.
  *
@@ -9,7 +7,7 @@ import java.io.Serializable;
  * server tells the client.
  * 
  */
-public class FoodData extends GameObject implements Serializable
+public class FoodData extends GameObject
 {
   
   /** The Constant serialVersionUID. */
@@ -25,14 +23,14 @@ public class FoodData extends GameObject implements Serializable
   /**
    * Instantiates a new FoodData given values.
    *
-   * @param foodType the food type
+   * @param foodType the food objType
    * @param x the x
    * @param y the y
    * @param quantity the quantity
    */
   public FoodData(GameObjectType foodType, int x, int y, int quantity)
   {
-    this.type = foodType;
+    this.objType = foodType;
     this.gridX = x;
     this.gridY = y;
     this.quantity = quantity;
@@ -47,7 +45,7 @@ public class FoodData extends GameObject implements Serializable
    */
   public FoodData(FoodData source)
   {
-    this.type =  source.type;
+    this.objType =  source.objType;
     this.gridX =  source.gridX;
     this.gridY =  source.gridY;
     this.quantity =  source.quantity;
@@ -56,6 +54,6 @@ public class FoodData extends GameObject implements Serializable
 
   public String toString()
   {
-    return type + ":"+quantity;
+    return objType + "("+gridX+","+gridY+") :"+quantity;
   }
 }

@@ -1,6 +1,5 @@
 package antworld.common;
 
-import java.io.Serializable;
 import antworld.common.AntAction.AntActionType;
 import antworld.common.AntAction.AntState;
 /**
@@ -8,9 +7,8 @@ import antworld.common.AntAction.AntState;
  * client and server.
  */
 
-public class AntData extends GameObject implements Comparable<AntData>, Serializable
+public class AntData extends GameObject implements Comparable<AntData>
 {
-
   /** An ant can be in one of three states: UNDERGROUND, OUT_AND_ABOUT or DEAD.<br>
    * When an ant is UNDERGROUND, it is in its nest. An ant in the nest is totally safe:
    * it cannot be attacked and never takes attrition damage.
@@ -37,7 +35,7 @@ public class AntData extends GameObject implements Comparable<AntData>, Serializ
 
   public AntState state = AntState.UNDERGROUND;
 
-  /** The ant type. */
+  /** The ant objType. */
   public AntType antType;
 
   
@@ -70,16 +68,17 @@ public class AntData extends GameObject implements Comparable<AntData>, Serializ
    * ant with id = UNKNOWN_ANT_ID.
    * This constructor sets nestName to null. The server will ignore this
    * as a client can only birth ants in its own nest.
-   * @param type the type
+   * @param antType the objType
    * @param teamName the team name
    */
-  public AntData(AntType type, TeamNameEnum teamName)
+  public AntData(AntType antType, TeamNameEnum teamName)
   {
+    this.objType = GameObjectType.ANT;
     id = UNKNOWN_ANT_ID;
-    this.antType = type;
+    this.antType = antType;
     nestName = null;
     this.teamName = teamName;
-    health = type.getMaxHealth();
+    health = antType.getMaxHealth();
     action = new AntAction(AntActionType.BIRTH);
   }
 
@@ -88,12 +87,13 @@ public class AntData extends GameObject implements Comparable<AntData>, Serializ
    * Constructor used by server.
    *
    * @param id the unique id
-   * @param type the type
+   * @param type the objType
    * @param nestName the nest name
    * @param teamName the team name
    */
   public AntData(int id, AntType type, NestNameEnum nestName, TeamNameEnum teamName)
   {
+    this.objType = GameObjectType.ANT;
     this.id = id;
     antType = type;
     this.nestName = nestName;
@@ -111,6 +111,7 @@ public class AntData extends GameObject implements Comparable<AntData>, Serializ
    */
   public AntData(AntData source)
   {
+    objType = GameObjectType.ANT;
     id = source.id;
     nestName = source.nestName;
     teamName = source.teamName;

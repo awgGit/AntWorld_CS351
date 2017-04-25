@@ -1,15 +1,23 @@
 package antworld.client;
 
-import antworld.common.*;
-import antworld.common.AntAction.AntActionType;
-import antworld.common.AntAction.AntState;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Random;
+
+import antworld.common.AntType;
+import antworld.common.PacketToClient;
+import antworld.common.PacketToServer;
+import antworld.common.AntAction;
+import antworld.common.AntAction.AntState;
+import antworld.common.AntData;
+import antworld.common.Constants;
+import antworld.common.Direction;
+import antworld.common.NestNameEnum;
+import antworld.common.TeamNameEnum;
+import antworld.common.AntAction.AntActionType;
 
 
 /**
@@ -43,6 +51,12 @@ import java.util.Random;
  *     </li>
  *   </ol>
  */
+
+
+
+
+
+
 
 
 public class ClientRandomWalk
@@ -115,11 +129,11 @@ public class ClientRandomWalk
     if (reconnect) packetOut.myAntList = null;
     else
     {
-      //Spawn ants of whatever type you want
-      int numAnts = 1; //Constants.INITIAL_FOOD_UNITS / AntType.TOTAL_FOOD_UNITS_TO_SPAWN;
+      //Spawn ants of whatever objType you want
+      int numAnts = 30;//Constants.INITIAL_FOOD_UNITS / AntType.TOTAL_FOOD_UNITS_TO_SPAWN;
       for (int i=0; i<numAnts; i++)
       {
-        AntType type = AntType.EXPLORER; //AntType.values()[random.nextInt(AntType.SIZE)]; //AntType.values()[random.nextInt(AntType.SIZE)];
+        AntType type = AntType.values()[random.nextInt(AntType.SIZE)];
         packetOut.myAntList.add(new AntData(type, myTeam)); //default action is BIRTH.
       }
     }
@@ -206,6 +220,8 @@ public class ClientRandomWalk
         System.exit(0);
       }
 
+
+
       if (myNestName == null) setupNest(packetIn);
       if (myNestName != packetIn.myNest)
       {
@@ -218,6 +234,7 @@ public class ClientRandomWalk
       send(packetOut);
     }
   }
+
 
   private void send(PacketToServer packetOut)
   {
@@ -274,26 +291,6 @@ public class ClientRandomWalk
   }
 
 
-  private boolean dropOffAtNest( AntData ant, AntAction action, NestData my_nest_data )
-  {
-
-//    if( ant.gridY < my_nest_data.centerY && ant.carryUnits != 0)
-//    {
-//      action.type = AntActionType.DROP;
-//      action.direction = Direction.WEST;
-//      action.quantity = 1;
-//      return true;
-//    }
-    return false;
-    //if( ant.gridY < 1280 ) System.out.println("So we tried to drop off...");
-
-    /*Direction dir = Direction.NORTH;
-    action.type = AntActionType.DROP;
-    action.direction = dir;
-    action.quantity = 1;
-    return ant.gridX < 1280;*/
-  }
-
   private boolean attackAdjacent(AntData ant, AntAction action)
   {
     return false;
@@ -306,26 +303,11 @@ public class ClientRandomWalk
 
   private boolean goHomeIfCarryingOrHurt(AntData ant, AntAction action)
   {
-    if(ant.carryUnits > 0)
-    {
-      Direction dir = Direction.NORTH;
-      action.type = AntActionType.MOVE;
-      action.direction = dir;
-      return true;
-    }
     return false;
   }
 
   private boolean pickUpWater(AntData ant, AntAction action)
   {
-    if(ant.carryUnits < ant.antType.getCarryCapacity())
-    {
-      Direction dir = Direction.SOUTH;
-      action.type = AntActionType.PICKUP;
-      action.quantity = ant.antType.getCarryCapacity();
-      action.direction = dir;
-      return (Constants.random.nextDouble() > 0.5); // 1/2 time we'll try to pick up water.
-    }
     return false;
   }
 
@@ -344,22 +326,9 @@ public class ClientRandomWalk
     return false;
   }
 
-  private boolean heal(AntData ant, AntAction action)
-  {
-    if(ant.health < ant.antType.getMaxHealth() - 3)
-    {
-
-      action.type = AntActionType.HEAL;
-      action.direction = null;
-      action.quantity = 1;
-      return true;
-    }
-    return false;
-  }
-
   private boolean goExplore(AntData ant, AntAction action)
   {
-    Direction dir = Direction.SOUTH; //Direction.getRandomDir();
+    Direction dir = Direction.getRandomDir();
     action.type = AntActionType.MOVE;
     action.direction = dir;
     return true;
@@ -383,11 +352,23 @@ public class ClientRandomWalk
     //This is simple example of possible actions in order of what you might consider
     //   precedence.
     if (exitNest(ant, action)) return action;
-    if( dropOffAtNest(ant,action,data.nestData[data.myNest.ordinal()])) return action;
-    if(heal(ant, action)) return action;
+
+    if (attackAdjacent(ant, action)) return action;
+
+    if (pickUpFoodAdjacent(ant, action)) return action;
+
     if (goHomeIfCarryingOrHurt(ant, action)) return action;
+
     if (pickUpWater(ant, action)) return action;
+
+    if (goToEnemyAnt(ant, action)) return action;
+
+    if (goToFood(ant, action)) return action;
+
+    if (goToGoodAnt(ant, action)) return action;
+
     if (goExplore(ant, action)) return action;
+
     return action;
   }
 
@@ -408,10 +389,8 @@ public class ClientRandomWalk
     boolean reconnection = false;
     if (args.length > 0) serverHost = args[args.length -1];
 
-    TeamNameEnum team = TeamNameEnum.RandomWalkers;
-    if (args.length > 1)
-    { team = TeamNameEnum.getTeamByString(args[0]);
-    }
+    //TeamNameEnum team = TeamNameEnum.RandomWalkers;
+    TeamNameEnum team = TeamNameEnum.SimpleSolid_3;
     if (args.length > 1)
     { team = TeamNameEnum.getTeamByString(args[0]);
     }

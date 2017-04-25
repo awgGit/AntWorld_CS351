@@ -3,7 +3,7 @@ package antworld.common;
 import antworld.common.AntAction.AntState;
 /**
  * This game supports 3 types of ants: WORKER, EXPLORER and WARRIOR.
- * Each type of ant overrides different default capability values. For example,
+ * Each objType of ant overrides different default capability values. For example,
  * WORKER ants can carry more food or water units than other ants.
  */
 public enum AntType
@@ -82,9 +82,7 @@ public enum AntType
   /**
    * Fog of War is a major mechanic of this game. <br>
    * Each tick, the server notifies the client of food and enemy ants that are within
-   * the vision radius of one or more of its ants.<br>
-   * An ant with a vision radius of 10 will perceive food and enemy ants within a
-   * 21x21 pixel square area that is centered on the ant.<br><br>
+   * the vision radius (defined by Manhattan Distance) of one or more of its ants.<br>
    *
    * If your nest has at least one ant underground, then you can perceive all game objects
    * (ants, food or water droplets) within your nest radius.
@@ -122,5 +120,5 @@ public enum AntType
    * Any water the ant was carrying is lost.
    * @return Units of food that an ant becomes when it dies.
    */
-  public static final int getDeadAntFoodUnits() {return 2;}
+  public static int getDeadAntFoodUnits() {return 2;}
 }

@@ -262,7 +262,6 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
             double x = ant.gridX - (int) (antScale / 2);
             double y = ant.gridY - (int) (antScale / 2);
             Rectangle2D.Double shape = new Rectangle2D.Double(x, y, antScale, antScale);
-            System.out.println("Drawing an ant");
             gfx.fill(shape);
 
             // int xx = (int)((mouseX - translateX)/scale);
@@ -296,45 +295,37 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
         }
       }
 
-      for( FoodSpawnSite fss : antworld.getFoodSpawnList() )
-      {
-        gfx.setColor( Color.RED );
-        gfx.drawRect( fss.getLocationX(), fss.getLocationY(), 1, 1 );
-      }
 
-/*
+
+
+
       //Render food
       gfx.setColor(PURPLE);
       double foodScale = ANT_PIXEL_SIZE / scale;
-      for (int i = 0; i < worldWidthInBlocks; ++i)
+      ArrayList<FoodSpawnSite> foodSpawnList = antworld.getFoodSpawnList();
+      for (FoodSpawnSite site : foodSpawnList)
       {
-        for (int j = 0; j < worldHeightInBlocks; ++j)
+
+        double x = site.getLocationX() - (int) (foodScale / 2);
+        double y = site.getLocationY() - (int) (foodScale / 2);
+        Rectangle2D.Double shape = new Rectangle2D.Double(x, y, foodScale, foodScale);
+        gfx.fill(shape);
+
+        if (!mouseDragging && scale >= ZOOM_OUT_MIN/2)
         {
-          for (FoodData food : foodBlocks[i][j])
-          {
-              double x = food.gridX - (int) (foodScale / 2);
-              double y = food.gridY - (int) (foodScale / 2);
-              Rectangle2D.Double shape = new Rectangle2D.Double(x, y, foodScale, foodScale);
-              gfx.fill(shape);
+           int mouseXX = (int) ((mouseX - translateX) / scale);
+           int mouseYY = (int) ((mouseY - translateY) / scale);
+           if (mouseXX >= x && mouseXX <= x + foodScale && mouseYY >= y && mouseYY <= y + foodScale)
+           {
+              gfx.setColor(Color.BLACK);
 
-              if (!mouseDragging && scale >= ZOOM_OUT_MIN/2)
-              {
-                int mouseXX = (int) ((mouseX - translateX) / scale);
-                int mouseYY = (int) ((mouseY - translateY) / scale);
-                if (mouseXX >= x && mouseXX <= x + foodScale && mouseYY >= y && mouseYY <= y + foodScale)
-                {
-                  gfx.setColor(Color.BLACK);
-
-                  gfx.setFont(fontAnt);
-                  gfx.drawString(food.toString(), (int) x, (int) y);
-                  gfx.setColor(PURPLE);
-                }
-              }
+              gfx.setFont(fontAnt);
+              gfx.setColor(PURPLE);
             }
           }
         }
 
-*/
+
 
       
       if (!mouseDragging)
