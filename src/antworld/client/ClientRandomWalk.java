@@ -5,18 +5,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Random;
 
-import antworld.common.AntType;
-import antworld.common.PacketToClient;
-import antworld.common.PacketToServer;
-import antworld.common.AntAction;
+import antworld.common.*;
 import antworld.common.AntAction.AntState;
-import antworld.common.AntData;
-import antworld.common.Constants;
-import antworld.common.Direction;
-import antworld.common.NestNameEnum;
-import antworld.common.TeamNameEnum;
 import antworld.common.AntAction.AntActionType;
 
 
@@ -52,13 +45,6 @@ import antworld.common.AntAction.AntActionType;
  *   </ol>
  */
 
-
-
-
-
-
-
-
 public class ClientRandomWalk
 {
   private static final boolean DEBUG = true;
@@ -69,6 +55,9 @@ public class ClientRandomWalk
   private NestNameEnum myNestName = null;
   private int centerX, centerY;
   private Socket clientSocket;
+
+  private int stage1_counter = 0;
+  private int stage2_counter = 0;
 
 
   /**
@@ -124,18 +113,20 @@ public class ClientRandomWalk
       return false;
     }
 
-    PacketToServer packetOut = new PacketToServer(myTeam);
+    PacketToServer packetOut = new PacketToServer(myTeam); // AWG: Impersonation?
 
     if (reconnect) packetOut.myAntList = null;
     else
     {
       //Spawn ants of whatever objType you want
-      int numAnts = 30;//Constants.INITIAL_FOOD_UNITS / AntType.TOTAL_FOOD_UNITS_TO_SPAWN;
+      int numAnts = 4;//Constants.INITIAL_FOOD_UNITS / AntType.TOTAL_FOOD_UNITS_TO_SPAWN;
+
       for (int i=0; i<numAnts; i++)
       {
-        AntType type = AntType.values()[random.nextInt(AntType.SIZE)];
+        AntType type = AntType.EXPLORER; //AntType.values()[random.nextInt(AntType.SIZE)];
         packetOut.myAntList.add(new AntData(type, myTeam)); //default action is BIRTH.
       }
+
     }
     send(packetOut);
     return true;
@@ -171,6 +162,7 @@ public class ClientRandomWalk
     centerX = packetIn.nestData[myNestName.ordinal()].centerX;
     centerY = packetIn.nestData[myNestName.ordinal()].centerY;
     System.out.println("ClientRandomWalk: ==== Nest Assigned ===>: " + myNestName);
+
   }
 
   /**
@@ -235,7 +227,6 @@ public class ClientRandomWalk
     }
   }
 
-
   private void send(PacketToServer packetOut)
   {
     try
@@ -254,10 +245,9 @@ public class ClientRandomWalk
     }
   }
 
-
   private PacketToServer chooseActionsOfAllAnts(PacketToClient packetIn)
   {
-    PacketToServer packetOut = new PacketToServer(myTeam);
+    PacketToServer packetOut = new PacketToServer(myTeam); // AWG: Impersonation?
     for (AntData ant : packetIn.myAntList)
     {
       AntAction action = chooseAction(packetIn, ant);
@@ -270,9 +260,6 @@ public class ClientRandomWalk
     return packetOut;
   }
 
-
-
-
   //=============================================================================
   // This method sets the given action to EXIT_NEST if and only if the given
   //   ant is underground.
@@ -283,13 +270,12 @@ public class ClientRandomWalk
     if (ant.state == AntState.UNDERGROUND)
     {
       action.type = AntActionType.EXIT_NEST;
-      action.x = centerX - (Constants.NEST_RADIUS-1) + random.nextInt(2 * (Constants.NEST_RADIUS-1));
-      action.y = centerY - (Constants.NEST_RADIUS-1) + random.nextInt(2 * (Constants.NEST_RADIUS-1));
+      action.x = centerX;// - (Constants.NEST_RADIUS-1) + random.nextInt(2 * (Constants.NEST_RADIUS-1));
+      action.y = centerY;// - (Constants.NEST_RADIUS-1) + random.nextInt(2 * (Constants.NEST_RADIUS-1));
       return true;
     }
     return false;
   }
-
 
   private boolean attackAdjacent(AntData ant, AntAction action)
   {
@@ -351,25 +337,21 @@ public class ClientRandomWalk
 
     //This is simple example of possible actions in order of what you might consider
     //   precedence.
-    if (exitNest(ant, action)) return action;
+    //if (exitNest(ant, action)) return action;
 
+    /*
     if (attackAdjacent(ant, action)) return action;
-
     if (pickUpFoodAdjacent(ant, action)) return action;
-
     if (goHomeIfCarryingOrHurt(ant, action)) return action;
-
     if (pickUpWater(ant, action)) return action;
-
     if (goToEnemyAnt(ant, action)) return action;
-
     if (goToFood(ant, action)) return action;
-
     if (goToGoodAnt(ant, action)) return action;
+    */
 
-    if (goExplore(ant, action)) return action;
-
-    return action;
+    //if (goExplore(ant, action)) return action;
+    return ant.action;
+    //return action;
   }
 
   private static String usage()
