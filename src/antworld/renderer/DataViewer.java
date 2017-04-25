@@ -1,19 +1,14 @@
 package antworld.renderer;
 
 
-import java.awt.BorderLayout;
-import java.awt.Container;
-import java.awt.Dimension;
+import java.awt.*;
 //import java.awt.Font;
-import java.awt.Insets;
 import java.util.ArrayList;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
+import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 
 import antworld.common.GameObject;
 import antworld.common.TeamNameEnum;
@@ -24,12 +19,15 @@ import antworld.server.Nest.NestStatus;
 @SuppressWarnings("serial")
 public class DataViewer extends JFrame
 {
-  
   //private Font myFont = new Font ("SansSerif", Font.PLAIN , 16);
   public static JTable table_nestList, table_FoodList;
   
   public DataViewer(ArrayList<Nest> nestList)
   {
+    try {
+      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    } catch (ClassNotFoundException | InstantiationException | UnsupportedLookAndFeelException | IllegalAccessException ignored) {
+    }
     this.setTitle(AntWorld.title);
 
     this.setBounds(0, 0, 768, 500);
@@ -64,27 +62,33 @@ public class DataViewer extends JFrame
     DefaultTableModel model_table_nestList = new DefaultTableModel(null,columnNames);  
     
     
-    table_nestList = new JTable(model_table_nestList);
+    table_nestList = new JTable(model_table_nestList) { //Automatically sizes the columns to match the content
+      @Override
+      public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+        Component component = super.prepareRenderer(renderer, row, column);
+        int rendererWidth = component.getPreferredSize().width;
+        TableColumn tableColumn = getColumnModel().getColumn(column);
+        tableColumn.setPreferredWidth(Math.max(rendererWidth + getIntercellSpacing().width, tableColumn.getPreferredWidth()));
+        return component;
+      }
+    };
+    table_nestList.setFont(table_nestList.getFont().deriveFont(24f));
+    table_nestList.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+    table_nestList.setRowHeight(table_nestList.getRowHeight()*2);
 
  
-    table_nestList.setPreferredScrollableViewportSize(new Dimension(panelWidth, panelHeight));
+    //table_nestList.setPreferredScrollableViewportSize(new Dimension(panelWidth, panelHeight));
     
     JScrollPane scrollPane = new JScrollPane(table_nestList);
     
-    table_nestList.setFillsViewportHeight(true);
+    //table_nestList.setFillsViewportHeight(true);
     panel_NestList.setLayout(new BorderLayout());
     panel_NestList.add(scrollPane);
     
    
     model_table_nestList.setRowCount(nestList.size());
-    table_nestList.selectAll();
     //tabbedPane.setSelectedIndex(0);
-    
-
-    
-    
     //////////////=============== Ant List Table ============================
-    
     JPanel panel_Details = new JPanel();
     tabbedPane.addTab("Ant List", panel_Details);
     
@@ -95,9 +99,9 @@ public class DataViewer extends JFrame
 //    columnAntList[3] = "Center Y";
 //    columnAntList[4] = "Ant Count";
 //    int i = 5;
-//    for (FoodType type : FoodType.values())
-//    { if (type != FoodType.UNKNOWN)
-//      { columnNames[i] = type.name();
+//    for (FoodType objType : FoodType.values())
+//    { if (objType != FoodType.UNKNOWN)
+//      { columnNames[i] = objType.name();
 //        i++;
 //      }
 //    }
@@ -128,7 +132,8 @@ public class DataViewer extends JFrame
     
     JPanel panel_Food = new JPanel();
     tabbedPane.addTab("Food List", panel_Food);
-  
+    scrollPane.getVerticalScrollBar().setValue(0);
+    pack();
   }
 
   public void update(ArrayList<Nest> nestList)
@@ -140,11 +145,7 @@ public class DataViewer extends JFrame
       table_nestList.setValueAt(nest.nestName, row, 0);
       table_nestList.setValueAt(nest.team, row, 1);
 
-      String status = "OK";
-      if (nest.getStatus() == NestStatus.DISCONNECTED) status = "???";
-      else if (nest.getStatus() == NestStatus.UNDERGROUND) status = "---";
-
-      table_nestList.setValueAt(status, row, 2);
+      table_nestList.setValueAt(nest.getStatus().getAsFriendlyString(), row, 2);
       table_nestList.setValueAt(nest.getAntCount(), row, 3);
       table_nestList.setValueAt(nest.getFoodCount(), row, 4);
       table_nestList.setValueAt(nest.getWaterCount(), row, 5);

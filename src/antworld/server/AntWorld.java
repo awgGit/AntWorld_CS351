@@ -11,7 +11,7 @@ import javax.swing.JFrame;
 import javax.swing.JFileChooser;
 import javax.imageio.ImageIO;
 
-import antworld.common.AntAction;
+import antworld.common.AntAction.AntState;
 import antworld.common.AntData;
 import antworld.common.Constants;
 import antworld.common.FoodData;
@@ -27,7 +27,7 @@ import antworld.renderer.Renderer;
 
 public class AntWorld implements ActionListener
 {
-  private static final boolean DEBUG = true;
+  private static final boolean DEBUG = false;
   public static Random random = Constants.random;
   public static final int FRAME_WIDTH = 1200;
   public static final int FRAME_HEIGHT = 700;
@@ -64,7 +64,7 @@ public class AntWorld implements ActionListener
 
     //********************* Note On map replacement  **************************
     //The map must have at least a one pixel a boarder of water: LandType.WATER.getColor.
-    BufferedImage map = Util.loadImage("resources/AntWorld.png", window);
+    BufferedImage map = Util.loadImage("AntWorld.png", window);
     worldWidth = map.getWidth();
     worldHeight = map.getHeight();
 
@@ -75,11 +75,9 @@ public class AntWorld implements ActionListener
     readAntWorld(map);
 
 
-      foodSpawnList = new ArrayList<>();
-      createFoodSpawnSite();
-      //System.out.println("AntWorld.loadFoodSites()...."
-      //  + foodSpawnList.size());
 
+    foodSpawnList = new ArrayList<>();
+    createFoodSpawnSite(true);
     System.out.println("World: " + worldWidth + " x " + worldHeight);
 
     for (Nest nest : nestList)
@@ -87,7 +85,7 @@ public class AntWorld implements ActionListener
       int x0 = nest.centerX;
       int y0 = nest.centerY;
 
-      System.out.println(nest.nestName + ": " + x0+","+y0);
+      if (DEBUG) System.out.println(nest.nestName + ": " + x0+","+y0);
 
       for (int x = x0 - Constants.NEST_RADIUS; x <= x0
         + Constants.NEST_RADIUS; x++)
@@ -103,20 +101,20 @@ public class AntWorld implements ActionListener
       }
     }
 
-
-    if (showGUI)
-    {
-      drawPanel.initWorld(world, worldWidth, worldHeight);
-      drawPanel.repaint();
-    }
-
     gameTimer = new Timer(Constants.TIME_STEP_MSEC, this);
 
     System.out.println("Done Initializing AntWorld");
     server = new Server(this, nestList);
     if (showGUI)
     {
+      drawPanel.initWorld(world, worldWidth, worldHeight);
+      drawPanel.repaint();
       dataViewer = new DataViewer(nestList);
+    }
+
+    for (FoodSpawnSite site : foodSpawnList)
+    {
+      site.spawn(this);
     }
     gameTimer.start();
     server.start();
@@ -135,11 +133,13 @@ public class AntWorld implements ActionListener
 
     if (DEBUG) System.out.println("AntWorld =====> Tick=" + gameTick + " (" + gameTime + ")");
 
-    if (random.nextDouble() < 0.9) // AWG: Changed to 0.9 so it happens frequently...
+    if (random.nextDouble() < 0.005)
     {
       int foodSiteIdx = random.nextInt(foodSpawnList.size());
       foodSpawnList.get(foodSiteIdx).spawn(this);
     }
+
+
 
     //Update non-interactive events of all ants in world. Non-interactive events include:
     //    Attrition damage
@@ -173,6 +173,9 @@ public class AntWorld implements ActionListener
       myNest.updateReceivePacket(this);
     }
 
+
+
+
     //Newly dead ants are left for one turn in the ant list, but in the world,
     //  they are immediately replaced with food piles.
     for (Nest myNest : nestList)
@@ -194,12 +197,15 @@ public class AntWorld implements ActionListener
       myNest.updateSendPacket(this, nestDataList);
     }
 
+
     //Update display, if not headless.
     if (drawPanel != null)
     { drawPanel.update();
       dataViewer.update(nestList);
     }
   }
+
+
 
   /*
   public NestData[] createNestDataList()
@@ -228,11 +234,16 @@ public class AntWorld implements ActionListener
     return null;
   }
 
+
   /**
    * gameTime is the time in seconds from the start of the game to the start of the current gameTick.
    * @return time in seconds
    */
   public double getGameTime() {return gameTime;}
+
+
+
+
   public int getGameTick()
   {
     return gameTick;
@@ -249,7 +260,7 @@ public class AntWorld implements ActionListener
    *
    *     <li>The map must have at least one pixel of LandType.to define the nest.</li>
    *     <li>Each nest (pixel with 0x0 color) must be at least 2xNEST_RADIUS distant from each other nest.</li>
-   *     <li>Map images must be resized using nearest neighbor NOT any type of interpolation or
+   *     <li>Map images must be resized using nearest neighbor NOT any objType of interpolation or
    *            averaging which will create shades that are undefined.</li>
    *     <li>Map images must be saved in a lossless format (i.e. png).</li>
    * </ol>
@@ -308,7 +319,7 @@ public class AntWorld implements ActionListener
 
   public void addAnt(AntData ant)
   {
-    if (ant.state != AntAction.AntState.OUT_AND_ABOUT) return;
+    if (ant.state != AntState.OUT_AND_ABOUT) return;
     int x = ant.gridX;
     int y = ant.gridY;
 
@@ -317,7 +328,7 @@ public class AntWorld implements ActionListener
     if (drawPanel != null) drawPanel.drawCell(world[x][y]);
   }
 
-  public void addFood(FoodSpawnSite foodSpawnSite, FoodData food)
+  public void addFood(FoodData food)
   {
     int x = food.gridX;
     int y = food.gridY;
@@ -338,13 +349,12 @@ public class AntWorld implements ActionListener
   }
 
 
+
+
   public void moveAnt(AntData ant, Cell from, Cell to)
   {
-
-
     from.setGameObject(null);
     to.setGameObject(ant);
-
 
     ant.gridX = to.getLocationX();
     ant.gridY = to.getLocationY();
@@ -355,51 +365,43 @@ public class AntWorld implements ActionListener
     }
 
   }
-/*
-  public void appendAntsInProximity(AntData myAnt, HashSet<AntData> antSet)
-  {
-    double x = myAnt.gridX;
-    double y = myAnt.gridY;
-    double radius = myAnt.antType.getVisionRadius();
-    NestNameEnum nestExclude = myAnt.nestName;
 
+
+  public void appendVisibleObjects(AntData myAnt, ArrayList<AntData> antList, ArrayList<FoodData> foodList)
+  {
+    int radius = myAnt.antType.getVisionRadius();
+    int xmin = Math.max(1,myAnt.gridX - radius);
+    int ymin = Math.max(1,myAnt.gridY - radius);
+    int xmax = Math.min(worldWidth-2,myAnt.gridX + radius);
+    int ymax = Math.min(worldHeight-2, myAnt.gridY + radius);
+
+
+    for (int y=ymin; y <= ymax; y++)
+    {
+      for (int x=xmin; x <= xmax; x++)
+      {
+        if (Util.manhattanDistance(x, y, myAnt.gridX, myAnt.gridY) > radius) continue;
+        GameObject obj = world[x][y].getGameObject();
+        if (obj == null) continue;
+        if ((world[x][y].lookedAtNest == myAnt.nestName) && (world[x][y].lookedAtTick == gameTick)) continue;
+
+        world[x][y].lookedAtNest = myAnt.nestName;
+        world[x][y].lookedAtTick = gameTick;
+
+        if (obj.objType == GameObject.GameObjectType.ANT)
+        {
+          AntData ant = (AntData) obj;
+          if (ant.nestName == myAnt.nestName) continue;
+          antList.add(ant);
+        }
+        else
+        {
+          foodList.add((FoodData) obj);
+        }
       }
     }
   }
-*/
-  // public boolean isAntInProximity(double x, double y, double radius)
-  // {
-  // for (int i = (int) Math.max(Math.floor(x / BLOCK_SIZE - radius /
-  // BLOCK_SIZE), 0); i <= Math.min(
-  // Math.ceil(x / BLOCK_SIZE + radius / BLOCK_SIZE), antBlocks.length - 1);
-  // ++i)
-  // {
-  // for (int j = (int) Math.max(Math.floor(y / BLOCK_SIZE - radius /
-  // BLOCK_SIZE), 0); j <= Math.min(
-  // Math.ceil(y / BLOCK_SIZE + radius / BLOCK_SIZE), antBlocks[i].length -
-  // 1); ++j)
-  // {
-  // for (AntData ant : antBlocks[i][j])
-  // {
-  //
-  // if (Util.manhattanDistance((int) x, (int) y, ant.gridX, ant.gridY) <=
-  // radius) return true;
-  // }
-  // }
-  // }
-  // return false;
-  // }
-/*
-  public void appendFoodInProximity(AntData myAnt, HashSet<FoodData> foodSet)
-  {
-    double x = myAnt.gridX;
-    double y = myAnt.gridY;
-    double radius = myAnt.antType.getVisionRadius();
 
-
-    }
-  }
-*/
 
 
 
@@ -416,21 +418,84 @@ public class AntWorld implements ActionListener
     return nestDataList;
   }
 
-  private void createFoodSpawnSite()
+  private void createFoodSpawnSite(boolean spawnNearNests)
   {
-    int totalSitesToSpawn = 30 + random.nextInt(3); // AWG: Increased number of spawn sites
-    int xRange = worldWidth/totalSitesToSpawn;
+    if (spawnNearNests)
+    {
+      for (Nest nest : nestList)
+      {
+        int x0 = nest.centerX + 25;
+        int y0 = nest.centerY + 25;
+
+        int x1 = nest.centerX - 25;
+        int y1 = nest.centerY - 25;
+
+        if (world[x0][y0].getLandType() == LandType.GRASS)
+        {
+          foodSpawnList.add(new FoodSpawnSite(this, x0, y0));
+          System.out.println("FoodSpawnSite: [ " + x0 + ", " + y0 + "]");
+
+        }
+        if (world[x1][y1].getLandType() == LandType.GRASS)
+        {
+          foodSpawnList.add(new FoodSpawnSite(this, x1, y1));
+          System.out.println("FoodSpawnSite: [ " + x1 + ", " + y1 + "]");
+        }
+      }
+      return;
+    }
+
+
+
+
+
+    int totalSitesToSpawn = 3 + random.nextInt(4);
+    if (spawnNearNests) totalSitesToSpawn = 30;
+
+    //int xRange = worldWidth/totalSitesToSpawn;
+    int minDistanceToNest = 150;
+    int minDistanceToSpawnSite = 500;
+    int attemptCount = 0;
     while (totalSitesToSpawn > 0)
     {
-      int spawnX = random.nextInt(xRange);
-      spawnX = spawnX + (totalSitesToSpawn-1)*xRange;
-      int spawnY = random.nextInt(worldHeight);
+      attemptCount++;
+      int spawnX = random.nextInt(worldWidth-4)+2;
+      int spawnY = random.nextInt(worldHeight-4)+2;
 
-      if (world[spawnX][spawnY].getLandType() == LandType.GRASS)
+      if (world[spawnX][spawnY].getLandType() != LandType.GRASS) continue;
       {
-        foodSpawnList.add(new FoodSpawnSite(spawnX, spawnY, nestList.size()));
-        //System.out.println("FoodSpawnSite: [ " + spawnX + ", " + spawnY + "] " + foodType);
-        totalSitesToSpawn--;
+        boolean locationOK = true;
+        for (Nest nest : nestList)
+        {
+          int x0 = nest.centerX;
+          int y0 = nest.centerY;
+          if ((Math.abs(x0-spawnX) < minDistanceToNest) && (Math.abs(y0-spawnY) < minDistanceToNest))
+          {
+            locationOK = false;
+            break;
+          }
+        }
+        if (!locationOK) continue;
+
+        for (FoodSpawnSite existingSite : foodSpawnList)
+        {
+          int x0 = existingSite.getLocationX();
+          int y0 = existingSite.getLocationY();
+          if ((Math.abs(x0-spawnX) < minDistanceToSpawnSite) && (Math.abs(y0-spawnY) < minDistanceToSpawnSite))
+          {
+            locationOK = false;
+            break;
+          }
+        }
+
+
+
+        if (locationOK)
+        { foodSpawnList.add(new FoodSpawnSite(this, spawnX, spawnY));
+          System.out.println("FoodSpawnSite: [ " + spawnX + ", " + spawnY + "] attempts="+attemptCount);
+          attemptCount = 0;
+          totalSitesToSpawn--;
+        }
       }
     }
   }

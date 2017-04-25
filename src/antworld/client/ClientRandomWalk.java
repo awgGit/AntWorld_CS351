@@ -1,14 +1,23 @@
 package antworld.client;
 
-import antworld.common.*;
-import antworld.common.AntAction.AntActionType;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Random;
+
+import antworld.common.AntType;
+import antworld.common.PacketToClient;
+import antworld.common.PacketToServer;
+import antworld.common.AntAction;
+import antworld.common.AntAction.AntState;
+import antworld.common.AntData;
+import antworld.common.Constants;
+import antworld.common.Direction;
+import antworld.common.NestNameEnum;
+import antworld.common.TeamNameEnum;
+import antworld.common.AntAction.AntActionType;
 
 
 /**
@@ -43,6 +52,13 @@ import java.util.Random;
  *   </ol>
  */
 
+
+
+
+
+
+
+
 public class ClientRandomWalk
 {
   private static final boolean DEBUG = true;
@@ -54,12 +70,15 @@ public class ClientRandomWalk
   private int centerX, centerY;
   private Socket clientSocket;
 
+
   /**
   * A random number generator is created in Constants. Use it.
   * Do not create a new generator every time you want a random number nor
   * even in every class were you want a generator.
   */
   private static Random random = Constants.random;
+
+
   public ClientRandomWalk(String host, TeamNameEnum team, boolean reconnect)
   {
     myTeam = team;
@@ -71,6 +90,7 @@ public class ClientRandomWalk
     mainGameLoop();
     closeAll();
   }
+
   private boolean openConnection(String host, boolean reconnect)
   {
     try
@@ -109,11 +129,11 @@ public class ClientRandomWalk
     if (reconnect) packetOut.myAntList = null;
     else
     {
-      //Spawn ants of whatever type you want
-      int numAnts = 1; //Constants.INITIAL_FOOD_UNITS / AntType.TOTAL_FOOD_UNITS_TO_SPAWN;
+      //Spawn ants of whatever objType you want
+      int numAnts = 30;//Constants.INITIAL_FOOD_UNITS / AntType.TOTAL_FOOD_UNITS_TO_SPAWN;
       for (int i=0; i<numAnts; i++)
       {
-        AntType type = AntType.EXPLORER; //AntType.values()[random.nextInt(AntType.SIZE)]; //AntType.values()[random.nextInt(AntType.SIZE)];
+        AntType type = AntType.values()[random.nextInt(AntType.SIZE)];
         packetOut.myAntList.add(new AntData(type, myTeam)); //default action is BIRTH.
       }
     }
@@ -121,6 +141,7 @@ public class ClientRandomWalk
     return true;
 
   }
+
   public void closeAll()
   {
     System.out.println("ClientRandomWalk.closeAll()");
@@ -199,6 +220,8 @@ public class ClientRandomWalk
         System.exit(0);
       }
 
+
+
       if (myNestName == null) setupNest(packetIn);
       if (myNestName != packetIn.myNest)
       {
@@ -211,6 +234,8 @@ public class ClientRandomWalk
       send(packetOut);
     }
   }
+
+
   private void send(PacketToServer packetOut)
   {
     try
@@ -228,6 +253,8 @@ public class ClientRandomWalk
       System.exit(0);
     }
   }
+
+
   private PacketToServer chooseActionsOfAllAnts(PacketToClient packetIn)
   {
     PacketToServer packetOut = new PacketToServer(myTeam);
@@ -243,6 +270,71 @@ public class ClientRandomWalk
     return packetOut;
   }
 
+
+
+
+  //=============================================================================
+  // This method sets the given action to EXIT_NEST if and only if the given
+  //   ant is underground.
+  // Returns true if an action was set. Otherwise returns false
+  //=============================================================================
+  private boolean exitNest(AntData ant, AntAction action)
+  {
+    if (ant.state == AntState.UNDERGROUND)
+    {
+      action.type = AntActionType.EXIT_NEST;
+      action.x = centerX - (Constants.NEST_RADIUS-1) + random.nextInt(2 * (Constants.NEST_RADIUS-1));
+      action.y = centerY - (Constants.NEST_RADIUS-1) + random.nextInt(2 * (Constants.NEST_RADIUS-1));
+      return true;
+    }
+    return false;
+  }
+
+
+  private boolean attackAdjacent(AntData ant, AntAction action)
+  {
+    return false;
+  }
+
+  private boolean pickUpFoodAdjacent(AntData ant, AntAction action)
+  {
+    return false;
+  }
+
+  private boolean goHomeIfCarryingOrHurt(AntData ant, AntAction action)
+  {
+    return false;
+  }
+
+  private boolean pickUpWater(AntData ant, AntAction action)
+  {
+    return false;
+  }
+
+  private boolean goToEnemyAnt(AntData ant, AntAction action)
+  {
+    return false;
+  }
+
+  private boolean goToFood(AntData ant, AntAction action)
+  {
+    return false;
+  }
+
+  private boolean goToGoodAnt(AntData ant, AntAction action)
+  {
+    return false;
+  }
+
+  private boolean goExplore(AntData ant, AntAction action)
+  {
+    Direction dir = Direction.getRandomDir();
+    action.type = AntActionType.MOVE;
+    action.direction = dir;
+    return true;
+  }
+
+
   private AntAction chooseAction(PacketToClient data, AntData ant)
   {
     AntAction action = new AntAction(AntActionType.NOOP);
@@ -257,17 +349,25 @@ public class ClientRandomWalk
       return action;
     }
 
-    // --- ACTIONS ---
-    /* If any condition evaluates true, return the action immediately.
-    Actions are modified within the function which evaluates whether they should be performed. */
+    //This is simple example of possible actions in order of what you might consider
+    //   precedence.
+    if (exitNest(ant, action)) return action;
 
-    if (ActionFunctions.exitNest( ant, action, data )) return action;
-    if (ActionFunctions.heal( ant, action )) return action;
-    if (ActionFunctions.pickUpWater(ant,action)) return action;
-    if (ActionFunctions.goHomeIfCarryingOrHurt(ant,action)) return action;
-    if (ActionFunctions.attackAdjacent(ant,action,data)) return action;
-    if( ActionFunctions.pickUpFoodAdjacent(ant,action,data)) return action;
-    if (ActionFunctions.goExplore( ant, action )) return action;
+    if (attackAdjacent(ant, action)) return action;
+
+    if (pickUpFoodAdjacent(ant, action)) return action;
+
+    if (goHomeIfCarryingOrHurt(ant, action)) return action;
+
+    if (pickUpWater(ant, action)) return action;
+
+    if (goToEnemyAnt(ant, action)) return action;
+
+    if (goToFood(ant, action)) return action;
+
+    if (goToGoodAnt(ant, action)) return action;
+
+    if (goExplore(ant, action)) return action;
 
     return action;
   }
@@ -279,6 +379,7 @@ public class ClientRandomWalk
       "-r specifies that the client is reconnecting.";
   }
 
+
   /**
    * @param args Array of command-line arguments (See usage()).
    */
@@ -288,10 +389,8 @@ public class ClientRandomWalk
     boolean reconnection = false;
     if (args.length > 0) serverHost = args[args.length -1];
 
-    TeamNameEnum team = TeamNameEnum.RandomWalkers;
-    if (args.length > 1)
-    { team = TeamNameEnum.getTeamByString(args[0]);
-    }
+    //TeamNameEnum team = TeamNameEnum.RandomWalkers;
+    TeamNameEnum team = TeamNameEnum.SimpleSolid_3;
     if (args.length > 1)
     { team = TeamNameEnum.getTeamByString(args[0]);
     }

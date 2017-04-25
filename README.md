@@ -6,10 +6,9 @@ The server needs to be started first.
 They can be tested on one machine, but to get the full performance, the server and
 and each client should be run on different machines.
 
-
-
-
-
+##Building and Running
+In order for the server to find the resources correctly, you must mark the `resources` folder in the project root as a resource root. This will copy the inner directory `resources/resources` on build to the output directory and allow the image loading routines to find the files. **This is as of 3:25PM on 2017-04-22**, and was changd to allow the server to run within a self-contained jar.
+##Grading
 
 For Spring 2017, there are two grading phases:
 1) Beat the bots: This is due Friday, May 5 at midnight. 
