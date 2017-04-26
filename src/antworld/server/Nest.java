@@ -238,8 +238,7 @@ public class Nest extends NestData implements Serializable
       }
       else ant.action.type = AntActionType.NOOP;
 
-
-      //Note: This must be done after removal of dead ants since it could cause an
+      //  Note: This must be done after removal of dead ants since it could cause an
       //  ant to die and newly dead ants are left in the list for one tick.
       if (ant.state == AntState.OUT_AND_ABOUT)
       { if (random.nextDouble() < ant.antType.getAttritionDamageProbability()) ant.health--;
