@@ -56,10 +56,6 @@ public class ClientRandomWalk
   private int centerX, centerY;
   private Socket clientSocket;
 
-  private int stage1_counter = 0;
-  private int stage2_counter = 0;
-
-
   /**
   * A random number generator is created in Constants. Use it.
   * Do not create a new generator every time you want a random number nor
@@ -162,6 +158,7 @@ public class ClientRandomWalk
     centerX = packetIn.nestData[myNestName.ordinal()].centerX;
     centerY = packetIn.nestData[myNestName.ordinal()].centerY;
     System.out.println("ClientRandomWalk: ==== Nest Assigned ===>: " + myNestName);
+    A_Star.buildBoard(); // AWG: Transform the board into interconnected graph nodes.
 
   }
 
