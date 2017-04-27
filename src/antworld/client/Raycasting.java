@@ -1,4 +1,6 @@
-package antworld.common;
+package antworld.client;
+import antworld.common.Util;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.net.URL;
@@ -6,7 +8,7 @@ import java.util.ArrayList;
 
 public class Raycasting
 {
-  private static int num_rays = 8;          // How many rays are cast (how dense, angularly?)
+  private static int num_rays = 20;          // How many rays are cast (how dense, angularly?)
   private static int max_distance = 1000;   // How many steps will rays travel (when is the cutoff?)
   private static double stride_length = 1;  // How far should each step go?
   private static BufferedImage loadedImage;
@@ -82,7 +84,7 @@ public class Raycasting
 
       angle = (360.0/num_rays) * i;
       dx = Math.sin( Math.toRadians(angle));
-      dy = Math.cos( Math.toRadians(angle));
+      dy = -Math.cos( Math.toRadians(angle));
 
       int distance;
       for(distance = 0; distance < max_distance; distance++ )

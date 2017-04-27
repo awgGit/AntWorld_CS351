@@ -77,7 +77,7 @@ public class AntWorld implements ActionListener
 
 
     foodSpawnList = new ArrayList<>();
-    createFoodSpawnSite(true);
+    createFoodSpawnSite(false); // AWG: Changed to false for realistic food patterns
     System.out.println("World: " + worldWidth + " x " + worldHeight);
 
     for (Nest nest : nestList)

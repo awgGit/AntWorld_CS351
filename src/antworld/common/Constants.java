@@ -9,7 +9,7 @@ public class Constants
 
   public static final int INITIAL_FOOD_UNITS = 100*AntType.TOTAL_FOOD_UNITS_TO_SPAWN;
   public static final int INITIAL_NEST_WATER_UNITS = 100;
-  public static final int TIME_STEP_MSEC = 500;
+  public static final int TIME_STEP_MSEC = 10;
   public static final double NANO = 1e-9;
   
 
