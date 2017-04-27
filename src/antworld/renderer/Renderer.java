@@ -300,7 +300,7 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
 
 
       //Render food
-      gfx.setColor(PURPLE);
+      gfx.setColor(Color.RED);
       double foodScale = ANT_PIXEL_SIZE / scale;
       ArrayList<FoodSpawnSite> foodSpawnList = antworld.getFoodSpawnList();
       for (FoodSpawnSite site : foodSpawnList)

@@ -77,7 +77,7 @@ public class AntWorld implements ActionListener
 
 
     foodSpawnList = new ArrayList<>();
-    createFoodSpawnSite(true);
+    createFoodSpawnSite(false); // AWG: Changed to false for realistic food patterns
     System.out.println("World: " + worldWidth + " x " + worldHeight);
 
     for (Nest nest : nestList)
@@ -133,7 +133,7 @@ public class AntWorld implements ActionListener
 
     if (DEBUG) System.out.println("AntWorld =====> Tick=" + gameTick + " (" + gameTime + ")");
 
-    if (random.nextDouble() < 0.005)
+    if (random.nextDouble() < 0.005) //awg: 0.5% chance per tick
     {
       int foodSiteIdx = random.nextInt(foodSpawnList.size());
       foodSpawnList.get(foodSiteIdx).spawn(this);
@@ -450,7 +450,7 @@ public class AntWorld implements ActionListener
 
 
     int totalSitesToSpawn = 3 + random.nextInt(4);
-    if (spawnNearNests) totalSitesToSpawn = 30;
+    if (spawnNearNests) totalSitesToSpawn = 30; // AWG: False in this build.
 
     //int xRange = worldWidth/totalSitesToSpawn;
     int minDistanceToNest = 150;
@@ -462,8 +462,12 @@ public class AntWorld implements ActionListener
       int spawnX = random.nextInt(worldWidth-4)+2;
       int spawnY = random.nextInt(worldHeight-4)+2;
 
+      System.out.println("Trying to spawn new random site"); // AWG
       if (world[spawnX][spawnY].getLandType() != LandType.GRASS) continue;
-      {
+
+      System.out.println("Succeeded in spawning new random site"); // AWG
+
+      { // AWG: these braces are unnecessary...
         boolean locationOK = true;
         for (Nest nest : nestList)
         {
