@@ -1,21 +1,20 @@
 package antworld.renderer;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import javax.swing.*;
-
+import antworld.common.AntAction.AntState;
 import antworld.common.AntData;
 import antworld.server.AntWorld;
 import antworld.server.Cell;
 import antworld.server.FoodSpawnSite;
 import antworld.server.Nest;
-import antworld.common.AntAction.AntState;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Renderer extends JPanel implements KeyListener, MouseListener, MouseMotionListener,
     MouseWheelListener, ComponentListener, ActionListener
@@ -229,6 +228,7 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
     // -worldWidth *scaleG+windowWidth /2;
     // if(translateGY < -worldHeight*scaleG+windowHeight/2)translateGY =
     // -worldHeight*scaleG+windowHeight/2;
+
     translateX += (translateGX - translateX) * elapsed * 0.005;
     translateY += (translateGY - translateY) * elapsed * 0.005;
     scale += (scaleG - scale) * elapsed * 0.005;

@@ -8,10 +8,25 @@ package antworld.client;
 
 import antworld.common.*;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.net.URL;
 import java.util.ArrayList;
 
 public class ActionFunctions
 {
+  private static BufferedImage loadedImage;
+
+  static
+  {
+    try
+    {
+      URL fileURL = Util.class.getClassLoader().getResource("resources/AntWorld.png");
+      loadedImage = ImageIO.read(fileURL);
+    }
+    catch( Exception e ) {
+      System.out.println(e); }
+  }
   // =========================
   //  Active action functions
   // =========================
@@ -45,13 +60,25 @@ public class ActionFunctions
   }
   static  boolean pickUpWater(AntData ant, AntAction action)
   {
+
     if(ant.carryUnits < ant.antType.getCarryCapacity())
     {
-      Direction dir = Direction.SOUTH;
-      action.type = AntAction.AntActionType.PICKUP;
-      action.quantity = ant.antType.getCarryCapacity();
-      action.direction = dir;
-      return (Constants.random.nextDouble() > 0.5); // 1/2 time we'll try to pick up water.
+     for(Direction direction: Direction.values())
+     {
+       if ((loadedImage.getRGB(ant.gridX+direction.deltaX(), ant.gridY+direction.deltaY()) & 0xff) == 255)
+       {
+         Direction dir = direction;
+         action.type = AntAction.AntActionType.PICKUP;
+         action.quantity = ant.antType.getCarryCapacity();
+         action.direction = dir;
+         return (true);
+       }
+       else
+       {
+         System.out.println("I didnt pick up water!");
+       }
+     }
+
     }
     return false;
   }
@@ -82,7 +109,7 @@ public class ActionFunctions
   }
   static  boolean goExplore(AntData ant, AntAction action)
   {
-    Direction dir = Direction.getRandomDir();
+    Direction dir = Direction.NORTH;
     action.type = AntAction.AntActionType.MOVE;
     action.direction = dir;
     return true;

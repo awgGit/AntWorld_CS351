@@ -71,7 +71,7 @@ public class Cell
   public void setGameObject(GameObject obj)
   { 
     gameObject = obj;
-    if(obj != null) gameObject.type = obj.type;
+    if(obj != null) gameObject.objType = obj.objType;
   }
   
   

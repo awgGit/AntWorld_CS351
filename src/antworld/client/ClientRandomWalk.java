@@ -1,16 +1,15 @@
 package antworld.client;
 
+import antworld.common.*;
+import antworld.common.AntAction.AntActionType;
+import antworld.common.AntAction.AntState;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Random;
-
-import antworld.common.*;
-import antworld.common.AntAction.AntState;
-import antworld.common.AntAction.AntActionType;
 
 
 /**
@@ -61,10 +60,10 @@ public class ClientRandomWalk
 
 
   /**
-  * A random number generator is created in Constants. Use it.
-  * Do not create a new generator every time you want a random number nor
-  * even in every class were you want a generator.
-  */
+   * A random number generator is created in Constants. Use it.
+   * Do not create a new generator every time you want a random number nor
+   * even in every class were you want a generator.
+   */
   private static Random random = Constants.random;
 
 
@@ -253,8 +252,8 @@ public class ClientRandomWalk
       AntAction action = chooseAction(packetIn, ant);
       if (action.type != AntActionType.NOOP)
       {
-         ant.action = action;
-         packetOut.myAntList.add(ant);
+        ant.action = action;
+        packetOut.myAntList.add(ant);
       }
     }
     return packetOut;
@@ -323,6 +322,7 @@ public class ClientRandomWalk
 
   private AntAction chooseAction(PacketToClient data, AntData ant)
   {
+
     AntAction action = new AntAction(AntActionType.NOOP);
 
     if (ant.action.type == AntActionType.BUSY)
@@ -337,17 +337,29 @@ public class ClientRandomWalk
 
     //This is simple example of possible actions in order of what you might consider
     //   precedence.
-    //if (exitNest(ant, action)) return action;
+    if (ActionFunctions.exitNest(ant, action,data)) return action;
 
-    /*
-    if (attackAdjacent(ant, action)) return action;
-    if (pickUpFoodAdjacent(ant, action)) return action;
-    if (goHomeIfCarryingOrHurt(ant, action)) return action;
-    if (pickUpWater(ant, action)) return action;
-    if (goToEnemyAnt(ant, action)) return action;
-    if (goToFood(ant, action)) return action;
-    if (goToGoodAnt(ant, action)) return action;
-    */
+    //if (ActionFunctions.goExplore(ant, action)) return action;
+
+    if (ActionFunctions.attackAdjacent(ant, action,data)) return action;
+    if (ActionFunctions.pickUpFoodAdjacent(ant, action,data)) return action;
+    if (ActionFunctions.goHomeIfCarryingOrHurt(ant, action)) return action;
+
+    if (ActionFunctions.pickUpWater(ant, action))
+    {
+      return action;
+    }
+    else
+    {
+
+      Direction dir = Direction.NORTH;
+      ant.action.type = AntActionType.MOVE;
+      ant.action.direction = dir;
+    }
+    if (ActionFunctions.goToEnemyAnt(ant, action)) return action;
+    if (ActionFunctions.goToFood(ant, action)) return action;
+    if (ActionFunctions.goToGoodAnt(ant, action)) return action;
+
 
     //if (goExplore(ant, action)) return action;
     return ant.action;
