@@ -68,7 +68,7 @@ public class Raycasting
    */
   public static ArrayList<Integer> castRays( double x, double y )
   {
-    ArrayList<Integer> ray_lengths = new ArrayList<>();
+    ArrayList<Integer> ray_lengths = new ArrayList<>(); // optimize to use constant size array
 
     double angle;
     double dx, dy;
