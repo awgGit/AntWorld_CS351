@@ -1,5 +1,6 @@
 package antworld.client;
 
+import antworld.common.PacketToClient;
 import antworld.common.Util;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -11,10 +12,10 @@ import java.util.PriorityQueue;
 
 public class A_Star
 {
-  public static PathNode[][] board = new PathNode[2500][1500]; // Big array.
-  private static BufferedImage loadedImage;
+  public static PathNode[][] board = new PathNode[2500][1500];
+  public static PathNode[][] nonTouchedBoard = new PathNode[2500][1500];
 
-  // Read in the map.
+  private static BufferedImage loadedImage;
   static
   {
     try
@@ -22,11 +23,21 @@ public class A_Star
       URL fileURL = Util.class.getClassLoader().getResource("resources/AntWorld.png");
       loadedImage = ImageIO.read(fileURL);
     }
-    catch( Exception e ) { System.out.println(e); }
+    catch( Exception e )
+    {
+      System.out.println(e);
+    }
   }
 
-  // Actually get the path between these two nodes.
-  public static Map<PathNode,PathNode> getPath(PathNode start_position, PathNode end_position)
+  /**
+   * To make things simpler I say that the start postion is the nest and the end position is the ants location
+   * @param start_position - the nests position!
+   * @param end_position-  the ants postion!
+   * @param ptc the information with regard to the ants.
+   * @param antID the id of the ant to distinguish it from the other ants.
+   * @return - the shortest path from the nest to the ant.
+   */
+  public static Map<PathNode,PathNode> getPath(PathNode start_position, PathNode end_position,PacketToClient ptc, int antID)
   {
     if( start_position == null) return null;
     if( end_position == null) return null;
@@ -45,6 +56,22 @@ public class A_Star
     LinkedList<PathNode> neighbors = new LinkedList<>();
 
     double dist;
+
+/**
+ * Set all the locations of other ants to null so this ant cant go there.
+ */
+    for(int i =0; i< ptc.myAntList.size(); i++)
+    {
+      if(ptc.myAntList.size() == 1)
+      {
+        break;
+      }
+      if(ptc.myAntList.get(i).id != antID )
+      {
+        board[ptc.myAntList.get(i).gridX][ptc.myAntList.get(i).gridY] = null;
+      }
+    }
+
     while( !frontier.isEmpty() )
     {
       current = frontier.poll();
@@ -73,6 +100,21 @@ public class A_Star
         }
       }
     }
+
+    /**
+     * Once this ants path has been created, set all the places that ants are on as available positions.
+     */
+    for(int i =0; i< ptc.myAntList.size(); i++)
+    {
+      if(ptc.myAntList.size() == 1)
+      {
+        break;
+      }
+      if(ptc.myAntList.get(i).id != antID)
+      {
+        board[ptc.myAntList.get(i).gridX][ptc.myAntList.get(i).gridY] = new PathNode(ptc.myAntList.get(i).gridX,ptc.myAntList.get(i).gridY,0);
+      }
+    }
     return came_from;
   }
 
@@ -83,7 +125,9 @@ public class A_Star
     else return( Math.abs(a.x-b.x)+Math.abs(a.y-b.y));
   }
 
-  // Build a pathnode representation of the map.
+  /**
+   * This method builds 2 boards for us to use A_Star on. We will exclude water on the map because it is not a valid space.
+   */
   public static void buildBoard()
   {
     // Read through map and build the board:
@@ -94,6 +138,7 @@ public class A_Star
         if ((loadedImage.getRGB(x,y) & 0xff) != 255) // If it's ground, make it a valid pathnode.
         {
           board[x][y] = new PathNode(x,y,0);
+          nonTouchedBoard[x][y] = new PathNode(x,y,0); // AWG: what's the point of this? It seems to just get used once - here.
         }
       }
     }
