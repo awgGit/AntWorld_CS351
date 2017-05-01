@@ -5,8 +5,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Random;
+import java.util.HashMap;
+import java.awt.image.BufferedImage;
+import java.net.URL;
+import javax.imageio.ImageIO;
 
 import antworld.common.*;
 import antworld.common.AntAction.AntState;
@@ -45,6 +48,7 @@ import antworld.common.AntAction.AntActionType;
  *   </ol>
  */
 
+
 public class ClientRandomWalk
 {
   private static final boolean DEBUG = true;
@@ -53,12 +57,15 @@ public class ClientRandomWalk
   private ObjectOutputStream outputStream = null;
   private boolean isConnected = false;
   private NestNameEnum myNestName = null;
-  private int centerX, centerY;
+  private int centerX, centerY, numAnts;
   private Socket clientSocket;
 
-  private int stage1_counter = 0;
-  private int stage2_counter = 0;
-
+  static int initialAntsInPatrols = 5;
+  static int numPatrols = 4;
+  private int gameTick = 0;
+  private Patrols patrols;
+  private HashMap<Integer, HashMap<Integer, AntData>> antGroups;
+  private BufferedImage loadedImage;
 
   /**
   * A random number generator is created in Constants. Use it.
@@ -82,6 +89,15 @@ public class ClientRandomWalk
 
   private boolean openConnection(String host, boolean reconnect)
   {
+    try
+    {
+      URL fileURL = Util.class.getClassLoader().getResource("resources/AntWorld.png");
+      loadedImage = ImageIO.read(fileURL);
+    }
+    catch(Exception e)
+    {
+      System.out.println(e.getMessage());
+    };
     try
     {
       clientSocket = new Socket(host, Constants.PORT);
@@ -113,24 +129,23 @@ public class ClientRandomWalk
       return false;
     }
 
-    PacketToServer packetOut = new PacketToServer(myTeam); // AWG: Impersonation?
-
+    numAnts = initialAntsInPatrols * numPatrols;
+    PacketToServer packetOut = new PacketToServer(myTeam);
     if (reconnect) packetOut.myAntList = null;
     else
     {
       //Spawn ants of whatever objType you want
-      int numAnts = 4;//Constants.INITIAL_FOOD_UNITS / AntType.TOTAL_FOOD_UNITS_TO_SPAWN;
-
+      AntType type;
+      AntData ant;
       for (int i=0; i<numAnts; i++)
       {
-        AntType type = AntType.EXPLORER; //AntType.values()[random.nextInt(AntType.SIZE)];
-        packetOut.myAntList.add(new AntData(type, myTeam)); //default action is BIRTH.
+        type = AntType.EXPLORER;
+        ant = new AntData(type,myTeam);
+        packetOut.myAntList.add(ant); //default action is BIRTH.
       }
-
     }
     send(packetOut);
     return true;
-
   }
 
   public void closeAll()
@@ -162,7 +177,6 @@ public class ClientRandomWalk
     centerX = packetIn.nestData[myNestName.ordinal()].centerX;
     centerY = packetIn.nestData[myNestName.ordinal()].centerY;
     System.out.println("ClientRandomWalk: ==== Nest Assigned ===>: " + myNestName);
-
   }
 
   /**
@@ -190,6 +204,7 @@ public class ClientRandomWalk
       {
         if (DEBUG) System.out.println("ClientRandomWalk: listening to socket....");
         packetIn = (PacketToClient) inputStream.readObject();
+
         if (DEBUG) System.out.println("ClientRandomWalk: received <<<<<<<<<"+inputStream.available()+"<...\n" + packetIn);
 
         if (packetIn.myNest == null)
@@ -212,8 +227,6 @@ public class ClientRandomWalk
         System.exit(0);
       }
 
-
-
       if (myNestName == null) setupNest(packetIn);
       if (myNestName != packetIn.myNest)
       {
@@ -224,6 +237,31 @@ public class ClientRandomWalk
 
       PacketToServer packetOut = chooseActionsOfAllAnts(packetIn);
       send(packetOut);
+    }
+  }
+
+  private void associateAntWithPatrol(PacketToClient packet)
+  {
+    antGroups = new HashMap<>(numPatrols);
+    HashMap<Integer, AntData> ants;
+    int index;
+    for(int j = 0; j < patrols.patrols.size(); j++)
+    {
+      ants = new HashMap<>(patrols.patrols.size());
+      antGroups.put(j, ants);
+    }
+    for(AntData ant : packet.myAntList)
+    {
+      for(Patrols.Patrol p : patrols.patrols)
+      {
+        if(p.antPatrol.contains(ant))
+        {
+          index = p.antPatrol.indexOf(ant);
+          ant.action.direction = p.antPatrol.get(index).action.direction;
+          antGroups.get(p.patrolNumber).put(index, ant);
+          break;
+        }
+      }
     }
   }
 
@@ -247,14 +285,25 @@ public class ClientRandomWalk
 
   private PacketToServer chooseActionsOfAllAnts(PacketToClient packetIn)
   {
-    PacketToServer packetOut = new PacketToServer(myTeam); // AWG: Impersonation?
-    for (AntData ant : packetIn.myAntList)
+    PacketToServer packetOut = new PacketToServer(myTeam);
+    if(patrols == null)
     {
-      AntAction action = chooseAction(packetIn, ant);
-      if (action.type != AntActionType.NOOP)
+      patrols  = new Patrols(numAnts, initialAntsInPatrols,
+              packetIn.myAntList, packetIn.nestData[myNestName.ordinal()]);
+    }
+    associateAntWithPatrol(packetIn);
+    for (int j = 0; j < antGroups.size(); j++)
+    {
+      HashMap<Integer, AntData> patrol = antGroups.get(j);
+      for (int k = 0; k < patrol.size(); k++)
       {
-         ant.action = action;
-         packetOut.myAntList.add(ant);
+        AntData ant = patrol.get(k);
+        AntAction action = chooseAction(packetIn, ant);
+        if (action.type != AntActionType.NOOP)
+        {
+          ant.action = action;
+          packetOut.myAntList.add(ant);
+        }
       }
     }
     return packetOut;
@@ -267,11 +316,17 @@ public class ClientRandomWalk
   //=============================================================================
   private boolean exitNest(AntData ant, AntAction action)
   {
+
     if (ant.state == AntState.UNDERGROUND)
     {
+      //Positions (gridX, gridY) relative to nest center and direction are assigned when patrols are formed.
+      //Assign ant direction to action direction so that state is not lost by server
       action.type = AntActionType.EXIT_NEST;
-      action.x = centerX;// - (Constants.NEST_RADIUS-1) + random.nextInt(2 * (Constants.NEST_RADIUS-1));
-      action.y = centerY;// - (Constants.NEST_RADIUS-1) + random.nextInt(2 * (Constants.NEST_RADIUS-1));
+      {
+        action.x = ant.gridX + centerX;// - (Constants.NEST_RADIUS-1) + random.nextInt(2 * (Constants.NEST_RADIUS-1));
+        action.y = ant.gridY + centerY;// - (Constants.NEST_RADIUS-1) + random.nextInt(2 * (Constants.NEST_RADIUS-1));
+        action.direction = ant.action.direction;
+      }
       return true;
     }
     return false;
@@ -314,9 +369,8 @@ public class ClientRandomWalk
 
   private boolean goExplore(AntData ant, AntAction action)
   {
-    Direction dir = Direction.getRandomDir();
+    action.direction = ant.action.direction;
     action.type = AntActionType.MOVE;
-    action.direction = dir;
     return true;
   }
 
@@ -337,9 +391,8 @@ public class ClientRandomWalk
 
     //This is simple example of possible actions in order of what you might consider
     //   precedence.
-    //if (exitNest(ant, action)) return action;
 
-    /*
+    if (exitNest(ant, action)) return action;
     if (attackAdjacent(ant, action)) return action;
     if (pickUpFoodAdjacent(ant, action)) return action;
     if (goHomeIfCarryingOrHurt(ant, action)) return action;
@@ -347,11 +400,9 @@ public class ClientRandomWalk
     if (goToEnemyAnt(ant, action)) return action;
     if (goToFood(ant, action)) return action;
     if (goToGoodAnt(ant, action)) return action;
-    */
 
-    //if (goExplore(ant, action)) return action;
+    if (goExplore(ant, action)) return action;
     return ant.action;
-    //return action;
   }
 
   private static String usage()
@@ -372,9 +423,10 @@ public class ClientRandomWalk
     if (args.length > 0) serverHost = args[args.length -1];
 
     //TeamNameEnum team = TeamNameEnum.RandomWalkers;
-    TeamNameEnum team = TeamNameEnum.SimpleSolid_3;
+    TeamNameEnum team = TeamNameEnum.Army;
     if (args.length > 1)
-    { team = TeamNameEnum.getTeamByString(args[0]);
+    {
+      team = TeamNameEnum.getTeamByString(args[0]);
     }
 
     new ClientRandomWalk(serverHost, team, reconnection);
