@@ -33,7 +33,6 @@ public class PacketToServer implements Serializable
 
   /**
    * Time in seconds from the start of the game.
-   * This field is set by the server when the message is received.
    */
   public double timeReceived;
 

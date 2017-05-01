@@ -150,8 +150,6 @@ public class AntMethods
       if (ant.carryType == null) return AntActionType.NOOP;
       if (ant.carryUnits <= 0) return AntActionType.NOOP;
       if (action.quantity <= 0) return AntActionType.NOOP;
-      
-      
       if (action.quantity > ant.carryUnits) action.quantity = ant.carryUnits;
       if (ant.state == AntState.UNDERGROUND)
       { 

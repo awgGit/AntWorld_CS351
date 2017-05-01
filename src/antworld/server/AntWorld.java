@@ -74,10 +74,8 @@ public class AntWorld implements ActionListener
 
     readAntWorld(map);
 
-
-
     foodSpawnList = new ArrayList<>();
-    createFoodSpawnSite(true);
+    createFoodSpawnSite(false); // AWG: Changed to false for realistic food patterns
     System.out.println("World: " + worldWidth + " x " + worldHeight);
 
     for (Nest nest : nestList)
@@ -348,9 +346,6 @@ public class AntWorld implements ActionListener
     if (drawPanel != null) drawPanel.drawCell(world[x][y]);
   }
 
-
-
-
   public void moveAnt(AntData ant, Cell from, Cell to)
   {
     from.setGameObject(null);
@@ -365,7 +360,6 @@ public class AntWorld implements ActionListener
     }
 
   }
-
 
   public void appendVisibleObjects(AntData myAnt, ArrayList<AntData> antList, ArrayList<FoodData> foodList)
   {
@@ -401,11 +395,6 @@ public class AntWorld implements ActionListener
       }
     }
   }
-
-
-
-
-
 
   private NestData[] buildNestDataList()
   {

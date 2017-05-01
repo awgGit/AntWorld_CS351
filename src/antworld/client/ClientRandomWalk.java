@@ -91,15 +91,6 @@ public class ClientRandomWalk
   {
     try
     {
-      URL fileURL = Util.class.getClassLoader().getResource("resources/AntWorld.png");
-      loadedImage = ImageIO.read(fileURL);
-    }
-    catch(Exception e)
-    {
-      System.out.println(e.getMessage());
-    };
-    try
-    {
       clientSocket = new Socket(host, Constants.PORT);
     }
     catch (UnknownHostException e)
@@ -111,7 +102,7 @@ public class ClientRandomWalk
     catch (IOException e)
     {
       System.err.println("ClientRandomWalk Error: Could not open connection to " + host
-        + " on port " + Constants.PORT);
+              + " on port " + Constants.PORT);
       e.printStackTrace();
       return false;
     }
@@ -411,8 +402,6 @@ public class ClientRandomWalk
       "Each argument group is optional and can be in any order.\n" +
       "-r specifies that the client is reconnecting.";
   }
-
-
   /**
    * @param args Array of command-line arguments (See usage()).
    */

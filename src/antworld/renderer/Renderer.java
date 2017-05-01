@@ -10,6 +10,7 @@ import java.util.HashMap;
 
 import javax.swing.*;
 
+import antworld.client.AttractorField;
 import antworld.common.AntData;
 import antworld.server.AntWorld;
 import antworld.server.Cell;
@@ -98,7 +99,6 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
   }
 
   /* +- CONTROLS/EVENTS ----------------------------------------+ */
-
   public void reshape(int width, int height)
   {
     windowWidth = width;
@@ -204,7 +204,7 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
   @Override
   public void paintComponent(Graphics g)
   {
-    g.drawImage(panel, 0, 0, this);
+      g.drawImage(panel, 0, 0, this);
   }
   
   public void update()
@@ -295,9 +295,20 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
         }
       }
 
-
-
-
+      // Draw a red filter over regions we've visited.
+      for(int y = 0 ; y < 150; y ++)
+      {
+        for(int x = 0; x < 250; x++ )
+        {
+          // Zero out attraction for the sea.
+          if ((world.getRGB(x*10, y*10) & 0xff) == 255) { AttractorField.pfield[x][y] = 0; }
+          else if(AttractorField.pfield[x][y] == 0) // If an area is explored, draw bright green..
+          {
+            gfx.setColor(new Color(150,255,0, 100));
+            gfx.fillRect(x*10,y*10,10,10);
+          }
+        }
+      }
 
       //Render food
       gfx.setColor(Color.RED);
@@ -324,7 +335,6 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
             }
           }
         }
-
 
 
       
