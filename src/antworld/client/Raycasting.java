@@ -8,7 +8,7 @@ import java.util.ArrayList;
 
 public class Raycasting
 {
-  private static int num_rays = 20;          // How many rays are cast (how dense, angularly?)
+  static int num_rays = 8; // How many rays are cast (how dense, angularly?)
   private static int max_distance = 1000;   // How many steps will rays travel (when is the cutoff?)
   private static double stride_length = 1;  // How far should each step go?
   private static BufferedImage loadedImage;
