@@ -1,4 +1,5 @@
 package antworld.client;
+import antworld.client.states.PatrolState;
 import antworld.common.AntData;
 import antworld.common.Direction;
 import antworld.common.NestData;
@@ -22,12 +23,11 @@ public class Patrols
   public Patrols(int numAnts, int antsInPatrol, ArrayList<AntData> patrolAnts, NestData nest)
   {
     this.antsInPatrol = antsInPatrol;
-    this.nest = nest;
     patrols = new ArrayList<>();
     ants = new ArrayList(numAnts);
-
     setPatrolAnts(patrolAnts);
     createPatrols(numAnts, antsInPatrol);
+    this.nest = nest;
   }
 
   // why have this as its own function?
@@ -176,8 +176,7 @@ public class Patrols
     }
   }
 
-  // AWG: how come this is in patrols.java?
-  class Patrol
+  public class Patrol
   {
     protected ArrayList<AntData> antPatrol;
     protected ArrayList<AntData> deadAntsInPatrol;
@@ -185,10 +184,11 @@ public class Patrols
     protected int[][] spawnPositions;
     protected int patrolNumber;
     protected int head;
-    protected int radius;
+    protected int searchDistance;
+    protected int wayPtX, wayPtY;
+    PatrolState pState;
 
-    private Direction heading;
-    private State state;
+    protected Direction heading;
 
     Patrol(int patrolNumber, int antsInPatrol)
     {
@@ -196,7 +196,9 @@ public class Patrols
       antPatrol = new ArrayList<>();
       deadAntsInPatrol = new ArrayList();
       spawnPositions = new int[antsInPatrol][2];
-      radius = 50;
+      searchDistance = 50;
+      head = 0;
+      setStartPos(nest.centerX, nest.centerY);
     }
 
     // why not just do p.heading = dir?
@@ -206,6 +208,25 @@ public class Patrols
     }
 
     // this depends on the orientation of the line of ants
+    private void setPatrolAnts(List<AntData> ants)
+    {
+      for(AntData ant: ants)
+      {
+        antPatrol.add(ant);
+      }
+    }
+
+    private void setSearchDistance(int distance)
+    {
+      searchDistance = distance;
+    }
+
+    protected void setStartPos(int x, int y)
+    {
+      wayPtX = x;
+      wayPtY = y;
+    }
+
     protected void associateAntWithPosition()
     {
       switch (heading)
@@ -228,7 +249,6 @@ public class Patrols
       {
         ptr.add(j,antPatrol.get(antsInPatrol-(1+j)));
       }
-      head = ptr.get(0).id;
       antPatrol = ptr;
     }
 
@@ -246,16 +266,6 @@ public class Patrols
       }
     }
 
-    // AWG: why not just do antPatrol.addAll(ants)?
-    // e.g. patrols.get(j).antPatrol.addAll(assignAntsToPatrol);
-    private void setPatrolAnts(List<AntData> ants)
-    {
-      for(AntData ant: ants)
-      {
-        antPatrol.add(ant);
-      }
-    }
-
     private int numDeadPatrolAnts()
     {
       numDeadAnts = 0;
@@ -268,6 +278,13 @@ public class Patrols
         }
       }
       return numDeadAnts;
+    }
+
+    public int distanceFromStartPt()
+    {
+      AntData leadAnt = antPatrol.get(head);
+      double dX = Math.abs(leadAnt.gridX - wayPtX), dY = Math.abs(leadAnt.gridY - wayPtY);
+      return (int)Math.sqrt(dX*dX + dY*dY);
     }
   }
 }
