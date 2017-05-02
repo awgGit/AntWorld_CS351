@@ -184,7 +184,6 @@ public class Server extends Thread
     }
 
     if (assignedNest != null) assignedNest.setClient(client, packetIn);
-
     return assignedNest;
   }
 }

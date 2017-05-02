@@ -18,6 +18,7 @@ public class Patrols
 
   private NestData nest;
 
+  // Patrols object consists of a list of patrols which consist of a list of ant IDs.
   public Patrols(int numAnts, int antsInPatrol, ArrayList<AntData> patrolAnts, NestData nest)
   {
     this.antsInPatrol = antsInPatrol;
@@ -29,11 +30,13 @@ public class Patrols
     createPatrols(numAnts, antsInPatrol);
   }
 
+  // why have this as its own function?
   public void setPatrolAnts(ArrayList<AntData> patrolAnts)
   {
     for(AntData ant : patrolAnts) ants.add(ant);
   }
 
+  // Divide ants into patrols, set their exit positions.
   private void createPatrols(int numAnts, int antsInPatrol)
   {
     ArrayList<AntData> assignAntsToPatrol;
@@ -48,6 +51,7 @@ public class Patrols
     assignPatrolHeadings();
   }
 
+  // make patrols radiate outwards
   public void assignPatrolHeadings()
   {
     int cnt;
@@ -66,6 +70,7 @@ public class Patrols
     }
   }
 
+  // Set position for anchor and in patrol
   private void setPatrolNestExitPositions(Patrol patrol, int offsetFromNestCenter)
   {
     double angle, phi;
@@ -82,6 +87,7 @@ public class Patrols
     }
   }
 
+  // Set the position of each ant in a patrol relative to the anchor ant
   private ArrayList<int[]> setAntPositionsInPatrol(double rotationAngle)
   {
     ArrayList<int[]> shifts = new ArrayList();
@@ -98,6 +104,7 @@ public class Patrols
     return shifts;
   }
 
+  // define the shape of the patrol
   private enum Positions
   {
     //Triangle Formation
@@ -134,6 +141,7 @@ public class Patrols
     }
   }
 
+  // rorate about the anchor ant
   private int[] rotatePatrols(double angle, int[] pos)
   {
     int[] transformedPositions = new int[2];
@@ -168,6 +176,7 @@ public class Patrols
     }
   }
 
+  // AWG: how come this is in patrols.java?
   class Patrol
   {
     protected ArrayList<AntData> antPatrol;
@@ -190,11 +199,13 @@ public class Patrols
       radius = 50;
     }
 
+    // why not just do p.heading = dir?
     private void setHeading(Direction dir)
     {
       heading = dir;
     }
 
+    // this depends on the orientation of the line of ants
     protected void associateAntWithPosition()
     {
       switch (heading)
@@ -235,6 +246,8 @@ public class Patrols
       }
     }
 
+    // AWG: why not just do antPatrol.addAll(ants)?
+    // e.g. patrols.get(j).antPatrol.addAll(assignAntsToPatrol);
     private void setPatrolAnts(List<AntData> ants)
     {
       for(AntData ant: ants)

@@ -295,17 +295,17 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
         }
       }
 
-      // Draw a red filter over regions we've visited.
-      for(int y = 0 ; y < 150; y ++)
+      // Draw a green filter over regions we've visited.
+      for(int y = 0 ; y < 1500/AttractorField.resolution; y ++)
       {
-        for(int x = 0; x < 250; x++ )
+        for(int x = 0; x < 2500/AttractorField.resolution; x++ )
         {
           // Zero out attraction for the sea.
-          if ((world.getRGB(x*10, y*10) & 0xff) == 255) { AttractorField.pfield[x][y] = 0; }
+          if ((world.getRGB(x*AttractorField.resolution, y*AttractorField.resolution) & 0xff) == 255) { AttractorField.pfield[x][y] = 0; }
           else if(AttractorField.pfield[x][y] == 0) // If an area is explored, draw bright green..
           {
             gfx.setColor(new Color(150,255,0, 100));
-            gfx.fillRect(x*10,y*10,10,10);
+            gfx.fillRect(x*AttractorField.resolution,y*AttractorField.resolution,AttractorField.resolution,AttractorField.resolution);
           }
         }
       }

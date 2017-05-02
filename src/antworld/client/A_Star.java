@@ -29,6 +29,77 @@ public class A_Star
     }
   }
 
+
+  // AWG: I needed a simple getPath without the ant stuff still. Same idea as the other one but with fewer args, overload
+  public static Map<PathNode,PathNode> getPath(PathNode start_position, PathNode end_position)
+  {
+    System.out.println("Called A*");
+    if( start_position == null)
+    {
+      System.out.println("A* : Invalid starting position");
+      return null;
+    }
+    if( end_position == null)
+    {
+      System.out.println("A*: Invalid ending position");
+      return null;
+    }
+
+    PriorityQueue<PathNode> frontier = new PriorityQueue<>();
+    frontier.add( start_position );
+
+    Map<PathNode,PathNode> came_from = new HashMap<>();
+    Map<PathNode,Double> cost_so_far = new HashMap<>();
+
+    cost_so_far.put(start_position,0.0);
+    came_from.put(start_position,null);
+    double new_cost;
+
+    PathNode current = null;
+    LinkedList<PathNode> neighbors = new LinkedList<>();
+
+    double dist;
+    while( !frontier.isEmpty() )
+    {
+      current = frontier.poll();
+      if( current == end_position )
+      {
+        break;
+      }
+
+      neighbors.removeAll(neighbors);
+
+      if( board[current.x+1][current.y] != null ){ neighbors.add( board[current.x+1][current.y]); }
+      if( board[current.x-1][current.y] != null ){ neighbors.add( board[current.x-1][current.y]); }
+      if( board[current.x][current.y+1] != null ){ neighbors.add( board[current.x][current.y+1]); }
+      if( board[current.x][current.y-1] != null ){ neighbors.add( board[current.x][current.y-1]); }
+      if( board[current.x-1][current.y+1] != null ){ neighbors.add( board[current.x-1][current.y+1]); }
+      if( board[current.x-1][current.y-1] != null ){ neighbors.add( board[current.x-1][current.y-1]); }
+      if( board[current.x+1][current.y+1] != null ){ neighbors.add( board[current.x+1][current.y+1]); }
+      if( board[current.x+1][current.y-1] != null ){ neighbors.add( board[current.x+1][current.y-1]); }
+
+      for (PathNode neighbor : neighbors)
+      {
+        // Cost of moving is 1, no matter the direction, unless going uphill, in which case cost is 2.
+        dist = (loadedImage.getRGB(neighbor.x, neighbor.y) > loadedImage.getRGB(current.x, current.y)) ? 2 : 1;
+
+        new_cost = cost_so_far.get(current) + dist;
+        if (!came_from.containsKey(neighbor) || new_cost < cost_so_far.get(neighbor))
+        {
+          cost_so_far.put(neighbor, new_cost);
+          neighbor.priority = new_cost + heuristic(end_position, neighbor);
+          frontier.add(neighbor);
+          came_from.put(neighbor, current);
+          if( Math.abs(neighbor.x-current.x) > 1 || Math.abs(neighbor.y-current.y) > 1 )
+            System.out.println("Severely messed up A*");
+        }
+      }
+    }
+
+    return came_from;
+  }
+
+
   /**
    * To make things simpler I say that the start postion is the nest and the end position is the ants location
    * @param start_position - the nests position!
@@ -75,7 +146,13 @@ public class A_Star
     while( !frontier.isEmpty() )
     {
       current = frontier.poll();
-      if( current == end_position ) break;
+      if( current == end_position )
+      {
+        System.out.println("A* found a path.");
+        break;
+      }
+
+      neighbors.removeAll(neighbors);
       if( board[current.x+1][current.y] != null ){ neighbors.add( board[current.x+1][current.y]); }
       if( board[current.x-1][current.y] != null ){ neighbors.add( board[current.x-1][current.y]); }
       if( board[current.x][current.y+1] != null ){ neighbors.add( board[current.x][current.y+1]); }
@@ -96,7 +173,8 @@ public class A_Star
           cost_so_far.put(neighbor, new_cost);
           neighbor.priority = new_cost + heuristic(end_position, neighbor);
           frontier.add(neighbor);
-          came_from.put(neighbor, current);
+          came_from.put(neighbor, current); // Check if this is giving a bad node
+          if( Math.abs( neighbor.x - current.x) > 1 || Math.abs(neighbor.y - current.y) > 1 ) System.out.println("AAUAHUhughg A* screwed up");
         }
       }
     }

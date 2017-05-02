@@ -9,11 +9,13 @@ public class AttractorField
   // could end up aliasing to strange effect.
   public static int[][] pfield;
 
+  public static int resolution = 5;
+
   static
   {
-    pfield = new int[250][150];
-    for(int y = 0; y < 150; y++ )
-      for(int x = 0; x < 250; x++)
+    pfield = new int[2500/resolution][1500/resolution];
+    for(int y = 0; y < 1500/resolution; y++ )
+      for(int x = 0; x < 2500/resolution; x++)
         pfield[x][y] = 1;
   }
 
@@ -21,14 +23,14 @@ public class AttractorField
   public static void updateField(PacketToClient ptc )
   {
     int distance;
-    for( int y = 0; y < 150; y++)
+    for( int y = 0; y < 1500/resolution; y++)
     {
-      for (int x = 0; x < 250; x++)
+      for (int x = 0; x < 2500/resolution; x++)
       {
         for (AntData ant : ptc.myAntList)
         {
-          distance = Math.abs(ant.gridX-x*10) + Math.abs(ant.gridY-y*10);
-          if( distance <= 10 )
+          distance = Math.abs(ant.gridX-x*resolution) + Math.abs(ant.gridY-y*resolution);
+          if( distance <= resolution )
           {
             pfield[x][y] = 0;
           }

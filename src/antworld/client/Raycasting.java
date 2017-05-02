@@ -65,6 +65,27 @@ public class Raycasting
     return best_angle;
   }
 
+  public static int getDistanceToWaterUsingVector( double x, double y, double fx, double fy )
+  {
+    double magnitude = Math.abs(x-fx) + Math.abs(y-fy);
+    // Math.sqrt((x-fx)*(x-fx) + (y-fy)*(y-fy));
+    double dx = (fx-x) / magnitude;
+    double dy = (fy-y) / magnitude;
+
+    for( int distance = 0; distance < max_distance; distance++ )
+    {
+      x += dx * stride_length;
+      y += dy * stride_length;
+      try { if ((loadedImage.getRGB((int) x, (int) y) & 0xff) == 255) { return distance; } }
+      catch( Exception e )
+      {
+        System.out.println(e);
+        return distance;
+      }
+    }
+    return max_distance;
+  }
+
   /* castRays
       Returns an arraylist with the integer distance to water from a particular position.
    */
