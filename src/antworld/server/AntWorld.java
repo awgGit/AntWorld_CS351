@@ -481,8 +481,6 @@ public class AntWorld implements ActionListener
           }
         }
 
-
-
         if (locationOK)
         { foodSpawnList.add(new FoodSpawnSite(this, spawnX, spawnY));
           System.out.println("FoodSpawnSite: [ " + spawnX + ", " + spawnY + "] attempts="+attemptCount);

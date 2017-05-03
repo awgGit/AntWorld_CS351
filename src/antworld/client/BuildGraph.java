@@ -25,17 +25,14 @@ public class BuildGraph
     }
   }
 
-  int resolution = 50;
+  static int resolution = 50;
   public static GraphNode[][] graphNodes = new GraphNode[2500][1500];
-  //double[][] densityMap = new double[2500/resolution][1500/resolution];
+  public static double[][] densityMap = new double[2500/resolution][1500/resolution];
 
   public BuildGraph()
   {
 
-    // Not being used at the moment
-    //<editor-fold desc="Variable Density Method">
-    /*
-        // Build a density map to figure out where to make the map fine grained or poor grained.
+    // Build a density map to figure out where to make the map fine grained or poor grained.
     int count;
     for(int x = 0; x < 2500/resolution - 1; x++)
     {
@@ -58,7 +55,9 @@ public class BuildGraph
       }
     }
 
-
+    // Not being used at the moment
+    //<editor-fold desc="Variable Density Method">
+    /*
     double chance_of_spawning;
     for(int x = 0; x < 2500; x++)
     {
