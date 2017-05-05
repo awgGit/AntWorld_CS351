@@ -107,6 +107,119 @@ public class ExploreGraph
     return moveAlongPath( ant, action, path_to_target.get(ant.id));
   }
 
+  public boolean pickUpFoodAdjacent(AntData ant, AntAction action, PacketToClient data)
+  {
+    if(ant.carryUnits >= ant.antType.getCarryCapacity()) return false;
+
+    int xDiff;
+    int yDiff;
+    if(data.foodList != null)
+    {
+      for(GameObject food : data.foodList)
+      {
+        if(food.objType == GameObject.GameObjectType.WATER) continue;
+        xDiff = Math.abs(food.gridX - ant.gridX);
+        yDiff = Math.abs(food.gridY - ant.gridY);
+        if((xDiff + yDiff) <= 1 || (xDiff == 1 && yDiff == 1))
+        {
+          for(Direction dir : Direction.values())
+          {
+            if(ant.gridX + dir.deltaX() == food.gridX && ant.gridY + dir.deltaY() == food.gridY)
+            {
+              action.direction = dir;
+              action.type = AntAction.AntActionType.PICKUP;
+              action.quantity = ant.antType.getCarryCapacity();
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  private boolean goToFood(AntData ant, AntAction action, PacketToClient ptc)
+  {
+    if( ant.carryUnits >= ant.antType.getCarryCapacity() ) return false;
+    int x_diff;
+    int y_diff;
+    int distance;
+    if( ptc.foodList != null)
+    {
+      for (GameObject food : ptc.foodList)
+      {
+        if (food.objType == GameObject.GameObjectType.WATER) continue;
+        x_diff = Math.abs(food.gridX - ant.gridX);
+        y_diff = Math.abs(food.gridY - ant.gridY);
+        distance = (int) Math.sqrt((x_diff * x_diff) + (y_diff * y_diff));
+        if(distance < ant.antType.getVisionRadius())
+        {
+          int xDiff = ant.gridX - food.gridX;
+          int yDiff = ant.gridY - food.gridY;
+          if (xDiff < 0 && yDiff > 0) action.direction = Direction.NORTHEAST;
+          else if (xDiff == 0 && yDiff > 0) action.direction = Direction.NORTH;
+          else if (xDiff > 0 && yDiff > 0) action.direction = Direction.NORTHWEST;
+          else if (xDiff > 0 && yDiff == 0) action.direction = Direction.WEST;
+          else if (xDiff > 0 && yDiff < 0) action.direction = Direction.SOUTHWEST;
+          else if (xDiff == 0 && yDiff > 0) action.direction = Direction.SOUTH;
+          else if (xDiff < 0 && yDiff < 0) action.direction = Direction.SOUTHEAST;
+          else if (xDiff < 0 && yDiff == 0) action.direction = Direction.EAST;
+          action.type = AntAction.AntActionType.MOVE;
+          action.quantity = ant.antType.getCarryCapacity();
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  static  boolean goHomeIfCarryingOrHurt(AntData ant, AntAction action, PacketToClient ptc)
+  {
+    return  enterNest(ant,action,ptc) // Enter the nest if we're close enough to it.
+            || goHomeIfCarryingFood(ant,action,ptc,ant.antType.getCarryCapacity()) // Return if full with food.
+            || goHomeIfCarryingWater(ant,action,ptc,ant.antType.getCarryCapacity()) // Return if full with water.
+            || goHomeIfHurt(ant,action,ptc,ant.antType.getMaxHealth()/2 ); // Return if below or at 50% health.
+  }
+
+  // Split the logic into multiple functions
+  static boolean goHomeIfCarryingWater( AntData ant, AntAction action, PacketToClient ptc, int carry_threshold)
+  {
+    return ant.carryType == GameObject.GameObjectType.FOOD && ant.carryUnits >= carry_threshold && goHome(ant, action, ptc);
+  }
+  static boolean goHomeIfCarryingFood( AntData ant, AntAction action, PacketToClient ptc, int carry_threshold)
+  {
+    return ant.carryType == GameObject.GameObjectType.FOOD && ant.carryUnits >= carry_threshold && goHome(ant, action, ptc);
+  }
+  static boolean goHomeIfHurt( AntData ant, AntAction action, PacketToClient ptc, int health_threshold )
+  {
+    return ant.health <= health_threshold && goHome(ant, action, ptc);
+  }
+  static boolean goHome( AntData ant, AntAction action, PacketToClient ptc )
+  {
+    int nest_y = ptc.nestData[ptc.myNest.ordinal()].centerY;
+    int nest_x = ptc.nestData[ptc.myNest.ordinal()].centerX;
+
+    PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
+    PathNode nestSpot = A_Star.board[nest_x][nest_y];
+
+    Map<PathNode,PathNode> path = A_Star.getPath( nestSpot, antSpot, ptc, ant.id);
+    return moveAlongPath( ant, action, path );
+  }
+
+  static boolean enterNest( AntData ant, AntAction action, PacketToClient ptc )
+  {
+    int nestY = ptc.nestData[ptc.myNest.ordinal()].centerY;
+    int nestX = ptc.nestData[ptc.myNest.ordinal()].centerX;
+
+    if( (Math.abs(ant.gridX-nestX)+Math.abs(ant.gridY-nestY) < 15) && (ant.carryUnits !=0 || ant.health < ant.antType.getMaxHealth() / 2))
+    {
+      action.direction = null;
+      action.type = AntAction.AntActionType.ENTER_NEST;
+      action.quantity = ant.carryUnits;
+      return true;
+    }
+    return false;
+  }
+
   // Implementation details are just instructions to say how to get out & follow a path.
   //<editor-fold desc="Implementation details">
   public void setAntActions( PacketToClient data )
@@ -117,8 +230,26 @@ public class ExploreGraph
       action = new AntAction(AntAction.AntActionType.NOOP);
       if (ant_ids.contains(ant.id))
       {
-        if (exitNest(ant, action, data)) {}
-        else if (goExplore(ant, action)) {}
+        if (exitNest(ant, action, data))
+        {
+          System.out.println("Antid: [" + ant.id + "] is taking action EXITNEST");
+        }
+        else if (goHomeIfCarryingOrHurt(ant, action, data))
+        {
+          System.out.println("Antid: [" + ant.id + "] is taking action GOHOMEIFCARRYINGORHURT");
+        }
+        else if (pickUpFoodAdjacent(ant, action, data))
+        {
+          System.out.println("Antid: [" + ant.id + "] is taking action PICKUPFOODADJACENT");
+        }
+        else if (goToFood(ant, action, data))
+        {
+          System.out.println("Antid: [" + ant.id + "] is taking action GOTOFOOD");
+        }
+        else if (goExplore(ant, action))
+        {
+          System.out.println("Antid: [" + ant.id + "] is taking action GOEXPLORE");
+        }
         ant.action = action;
       }
     }
