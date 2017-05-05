@@ -1,20 +1,22 @@
 package antworld.renderer;
 
-import antworld.common.AntAction.AntState;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import javax.swing.*;
+
+import antworld.client.AttractorField;
 import antworld.common.AntData;
 import antworld.server.AntWorld;
 import antworld.server.Cell;
 import antworld.server.FoodSpawnSite;
 import antworld.server.Nest;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.HashMap;
+import antworld.common.AntAction.AntState;
 
 public class Renderer extends JPanel implements KeyListener, MouseListener, MouseMotionListener,
     MouseWheelListener, ComponentListener, ActionListener
@@ -97,7 +99,6 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
   }
 
   /* +- CONTROLS/EVENTS ----------------------------------------+ */
-
   public void reshape(int width, int height)
   {
     windowWidth = width;
@@ -203,7 +204,7 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
   @Override
   public void paintComponent(Graphics g)
   {
-    g.drawImage(panel, 0, 0, this);
+      g.drawImage(panel, 0, 0, this);
   }
   
   public void update()
@@ -228,7 +229,6 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
     // -worldWidth *scaleG+windowWidth /2;
     // if(translateGY < -worldHeight*scaleG+windowHeight/2)translateGY =
     // -worldHeight*scaleG+windowHeight/2;
-
     translateX += (translateGX - translateX) * elapsed * 0.005;
     translateY += (translateGY - translateY) * elapsed * 0.005;
     scale += (scaleG - scale) * elapsed * 0.005;
@@ -295,9 +295,20 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
         }
       }
 
-
-
-
+      // Draw a green filter over regions we've visited.
+      for(int y = 0 ; y < 1500/AttractorField.resolution; y ++)
+      {
+        for(int x = 0; x < 2500/AttractorField.resolution; x++ )
+        {
+          // Zero out attraction for the sea.
+          if ((world.getRGB(x*AttractorField.resolution, y*AttractorField.resolution) & 0xff) == 255) { AttractorField.pfield[x][y] = 0; }
+          else if(AttractorField.pfield[x][y] == 0) // If an area is explored, draw bright green..
+          {
+            gfx.setColor(new Color(150,255,0, 100));
+            gfx.fillRect(x*AttractorField.resolution,y*AttractorField.resolution,AttractorField.resolution,AttractorField.resolution);
+          }
+        }
+      }
 
       //Render food
       gfx.setColor(Color.RED);
@@ -324,7 +335,6 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
             }
           }
         }
-
 
 
       

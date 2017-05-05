@@ -100,7 +100,6 @@ public class AntData extends GameObject implements Comparable<AntData>
     this.teamName = teamName;
     health = type.getMaxHealth();
     action = new AntAction(AntActionType.BIRTH);
-    this.objType = GameObjectType.ANT;
   }
   
   
@@ -131,19 +130,16 @@ public class AntData extends GameObject implements Comparable<AntData>
   }
 
   /**
-   *
    * @return a formatted string showing many of this ant's fields.
-   *
    */
-
   public String toString()
   {
     String out = "AntData: [id=" + id + ", nest=" + nestName + ", team=" + teamName + ", " + antType + ", health="
         + health + ", " + action;
-    if (carryUnits > 0)out += ", carry: [" + carryType + ", " + carryUnits + "] CarryCap=" + antType.getCarryCapacity();
+    if (carryUnits > 0) out += ", carry: [" + carryType + ", " + carryUnits + "]";
 
     if (state==AntState.UNDERGROUND) out += ", underground ]";
-    else out += ", x=" + gridX + ", y=" + gridY + "]" +"food="+carryUnits+" Carrying: "+carryType;
+    else out += ", x=" + gridX + ", y=" + gridY + "]";
 
     return out;
   }

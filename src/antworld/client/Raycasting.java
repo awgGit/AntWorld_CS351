@@ -1,4 +1,6 @@
-package antworld.common;
+package antworld.client;
+import antworld.common.Util;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.net.URL;
@@ -6,7 +8,7 @@ import java.util.ArrayList;
 
 public class Raycasting
 {
-  private static int num_rays = 8;          // How many rays are cast (how dense, angularly?)
+  static int num_rays = 8; // How many rays are cast (how dense, angularly?)
   private static int max_distance = 1000;   // How many steps will rays travel (when is the cutoff?)
   private static double stride_length = 1;  // How far should each step go?
   private static BufferedImage loadedImage;
@@ -63,6 +65,27 @@ public class Raycasting
     return best_angle;
   }
 
+  public static int getDistanceToWaterUsingVector( double x, double y, double fx, double fy )
+  {
+    double magnitude = Math.abs(x-fx) + Math.abs(y-fy);
+    // Math.sqrt((x-fx)*(x-fx) + (y-fy)*(y-fy));
+    double dx = (fx-x) / magnitude;
+    double dy = (fy-y) / magnitude;
+
+    for( int distance = 0; distance < max_distance; distance++ )
+    {
+      x += dx * stride_length;
+      y += dy * stride_length;
+      try { if ((loadedImage.getRGB((int) x, (int) y) & 0xff) == 255) { return distance; } }
+      catch( Exception e )
+      {
+        System.out.println(e);
+        return distance;
+      }
+    }
+    return max_distance;
+  }
+
   /* castRays
       Returns an arraylist with the integer distance to water from a particular position.
    */
@@ -82,7 +105,7 @@ public class Raycasting
 
       angle = (360.0/num_rays) * i;
       dx = Math.sin( Math.toRadians(angle));
-      dy = Math.cos( Math.toRadians(angle));
+      dy = -Math.cos( Math.toRadians(angle));
 
       int distance;
       for(distance = 0; distance < max_distance; distance++ )
