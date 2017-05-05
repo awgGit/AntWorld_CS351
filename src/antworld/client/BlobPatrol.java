@@ -15,7 +15,7 @@ class BlobPatrol
   private Map<PathNode,PathNode> the_path;
   private PathNode current_target;
 
-  private ArrayList<Integer> ant_ids;
+  public ArrayList<Integer> ant_ids;
   private int origin_x, origin_y;
 
   /* goExplore
@@ -107,10 +107,10 @@ class BlobPatrol
     return true;
   }
 
-  public BlobPatrol(int nest_x, int nest_y )
+  public BlobPatrol(int nest_x, int nest_y, int demo_x, int demo_y )
   {
     ant_ids = new ArrayList<>();
-    the_path = A_Star.getPath(A_Star.board[200][300],A_Star.board[nest_x][nest_y]);
+    the_path = A_Star.getPath(A_Star.board[demo_x][demo_y],A_Star.board[nest_x][nest_y]);
     current_target = A_Star.board[nest_x][nest_y];
     origin_x = nest_x;
     origin_y = nest_y;
