@@ -261,9 +261,15 @@ public class ExploreGraph
     if( nextStep == null)
     {
       GraphNode target = targets.get(ant.id);
-      recalculatePath(ant, target);
-        nextStep = path.get(antSpot);
-      if(ant.gridX == target.x && ant.gridY == target.y) System.out.println("We have problems!");
+      //recalculatePath(ant, target);
+      PathNode antSpot2 = A_Star.board[ant.gridX][ant.gridY];
+      PathNode finalSpot = A_Star.board[target.x][target.y];
+       path = A_Star.getPath(finalSpot, antSpot);
+       System.out.println(path.get(antSpot));
+      path_to_target.put(ant.id, path);
+      nextStep = path.get(antSpot2);
+      //  return false;
+      //if(ant.gridX == target.x && ant.gridY == target.y) System.out.println("We have problems!");
       //System.out.println("Error, the spot that you're trying to go to is somehow invalid.");
     }
 
