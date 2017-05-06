@@ -29,6 +29,7 @@ class BlobPatrol
     double sx, sy, mag, angle;
 
     // Get the first step in the local-to-static-A* path.
+
     PathNode n = A_Star.getPath(current_target,A_Star.board[ant.gridX][ant.gridY]).get(A_Star.board[ant.gridX][ant.gridY]);
     if(n == null) return false; // If we're already at the leading static-path node, then don't try moving anywhere.
 

@@ -190,7 +190,8 @@ public class A_Star
       }
       if(ptc.myAntList.get(i).id != antID)
       {
-        board[ptc.myAntList.get(i).gridX][ptc.myAntList.get(i).gridY] = new PathNode(ptc.myAntList.get(i).gridX,ptc.myAntList.get(i).gridY,0);
+        board[ptc.myAntList.get(i).gridX][ptc.myAntList.get(i).gridY] =
+                new PathNode(ptc.myAntList.get(i).gridX,ptc.myAntList.get(i).gridY,0);
       }
     }
     return came_from;

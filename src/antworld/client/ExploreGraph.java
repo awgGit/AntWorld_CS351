@@ -18,8 +18,9 @@ public class ExploreGraph
   Map<Integer,GraphNode> targets;
   Map<Integer,ArrayList<GraphNode>> path_taken; // The *big* nodes traversed.
   Map<Integer,Map<PathNode,PathNode>> path_to_target; // The *grid* (small) nodes traversed.
-
+  Map<Integer, Boolean> homePath_set;
   ArrayList<Integer> ant_ids;
+
 
   private int origin_x;
   private int origin_y;
@@ -31,6 +32,8 @@ public class ExploreGraph
     ant_ids = new ArrayList<>();
     targets = new HashMap<>();
     path_to_target = new HashMap<>();
+    homePath_set = new HashMap<>();
+
 
     origin_x = nest_x;
     origin_y = nest_y;
@@ -52,6 +55,7 @@ public class ExploreGraph
     path_taken.put( ant.id, path );
     targets.put( ant.id, BuildGraph.graphNodes[ant.gridX][ant.gridY] );
     path_to_target.put( ant.id, null );
+    homePath_set.put(ant.id, false);
   }
 
   // The logic for how to explore the graph. Probably requires some more attention.
@@ -74,8 +78,8 @@ public class ExploreGraph
           GraphNode rp = null;
 
           // If we wanted to assure a consistent direction (e.g. for patrols), this is where we'd do it - rather than
-          // picking a random next node, we could search ndoes for those most closely aligned to our current direction.
-          // There is of course no guarentee that a node in a similar direction exists, nor that the path one would take
+          // picking a random next node, we could search nodes for those most closely aligned to our current direction.
+          // There is of course no guarantee that a node in a similar direction exists, nor that the path one would take
           // to it would at all times be in the same direction.
           while( rp == null ){ rp = BuildGraph.graphNodes[Constants.random.nextInt(2500)][Constants.random.nextInt(1500)]; }
           targets.put(ant.id, rp );
@@ -187,15 +191,31 @@ public class ExploreGraph
 
   private boolean goHome( AntData ant, AntAction action, PacketToClient ptc )
   {
-    int nest_y = ptc.nestData[ptc.myNest.ordinal()].centerY;
-    int nest_x = ptc.nestData[ptc.myNest.ordinal()].centerX;
-
+    //int nest_y = ptc.nestData[ptc.myNest.ordinal()].centerY;
+    //int nest_x = ptc.nestData[ptc.myNest.ordinal()].centerX;
+    //PathNode nestSpot = A_Star.board[nest_x][nest_y];
+    //Map<PathNode,PathNode> path = A_Star.getPath( nestSpot, antSpot, ptc, ant.id);
+    Map<PathNode,PathNode> path;
     PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
-    PathNode nestSpot = A_Star.board[nest_x][nest_y];
-
-    Map<PathNode,PathNode> path = A_Star.getPath( nestSpot, antSpot, ptc, ant.id);
-    path_to_target.put(ant.id, path);
-    return moveAlongPath( ant, action, path );
+    if(!homePath_set.get(ant.id))
+    {
+      PathNode target = A_Star.board[targets.get(ant.id).x][targets.get(ant.id).y];
+      path = A_Star.getPath(target, antSpot);
+      path_to_target.put(ant.id, path);
+      homePath_set.put(ant.id, true);
+      System.out.println("Ant[" + ant.id + "]: Home Path Set!");
+    }
+    else if(antSpot.x == targets.get(ant.id).x && antSpot.y == targets.get(ant.id).y)
+    {
+      ArrayList<GraphNode> nodes = path_taken.get(ant.id);
+      nodes.remove(nodes.size()-1);
+      GraphNode targetNode = nodes.get(nodes.size()-1);
+      PathNode target = A_Star.board[targetNode.x][targetNode.y];
+      path_to_target.put(ant.id, A_Star.getPath(target, antSpot));
+      targets.put(ant.id, targetNode);
+      System.out.println("Ant[" + ant.id + "]: Going Home!");
+    }
+    return moveAlongPath( ant, action, path_to_target.get(ant.id) );
   }
 
   // Jitter to avoid getting stuck...
@@ -220,7 +240,7 @@ public class ExploreGraph
     return false;
   }
 
-  static boolean enterNest( AntData ant, AntAction action, PacketToClient ptc )
+  private boolean enterNest( AntData ant, AntAction action, PacketToClient ptc )
   {
     int nestY = ptc.nestData[ptc.myNest.ordinal()].centerY;
     int nestX = ptc.nestData[ptc.myNest.ordinal()].centerX;
@@ -230,6 +250,7 @@ public class ExploreGraph
       action.direction = null;
       action.type = AntAction.AntActionType.ENTER_NEST;
       action.quantity = ant.carryUnits;
+      homePath_set.put(ant.id, false);
       return true;
     }
     return false;
@@ -255,7 +276,7 @@ public class ExploreGraph
           {
             System.out.println("Antid: [" + ant.id + "] is taking action GOHOMEIFCARRYINGORHURT");
           }
-          if(healSelf(ant,action))
+          else if(healSelf(ant,action))
           {
             System.out.printf("ant_it : [%d] is taking action HEALSELF\n", ant.id);
           }
@@ -276,9 +297,6 @@ public class ExploreGraph
             System.out.println("initiating jitterbug");
           }
         }
-
-
-
         ant.action = action;
       }
     }
@@ -290,7 +308,7 @@ public class ExploreGraph
     if( ant.health >= ant.antType.getMaxHealth() ) return false;
 
     // Heal if we have enough units and we're at sufficiently low health.
-    if( ant.carryUnits > 0 )
+    if(ant.carryUnits > 0 && ant.carryType == GameObject.GameObjectType.WATER)
     {
       action.type = AntAction.AntActionType.HEAL;
       action.direction = null;
@@ -341,11 +359,9 @@ public class ExploreGraph
     if( nextStep == null)
     {
       GraphNode target = targets.get(ant.id);
-      //recalculatePath(ant, target);
       PathNode antSpot2 = A_Star.board[ant.gridX][ant.gridY];
       PathNode finalSpot = A_Star.board[target.x][target.y];
-       path = A_Star.getPath(finalSpot, antSpot);
-       System.out.println(path.get(antSpot));
+      path = A_Star.getPath(finalSpot, antSpot);
       path_to_target.put(ant.id, path);
       nextStep = path.get(antSpot2);
     }
@@ -369,14 +385,6 @@ public class ExploreGraph
     return true;
   }
 
-  private void recalculatePath(AntData ant, GraphNode target)
-  {
-    PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
-    PathNode finalSpot = A_Star.board[target.x][target.y];
-    Map<PathNode, PathNode> path = A_Star.getPath(finalSpot, antSpot);
-    path_to_target.put(ant.id, path);
-  }
-
   private boolean exitNest(AntData ant, AntAction action, PacketToClient ptc)
   {
     if (ant.state == AntAction.AntState.UNDERGROUND)
@@ -397,6 +405,35 @@ public class ExploreGraph
     }
     return false;
   }
+
+  private boolean attack(AntData ant, AntAction action, PacketToClient ptc)
+  {
+    for(int j = 0; j < ptc.enemyAntList.size(); j++)
+    {
+      AntData enemy = ptc.enemyAntList.get(j);
+      int delX, delY;
+      Direction dir = null;
+      if(Math.abs(enemy.gridX - ant.gridX) <= 1 && Math.abs(enemy.gridY - ant.gridY) <= 1)
+      {
+        delX = ant.gridX - enemy.gridX;
+        delY = ant.gridY - enemy.gridY;
+        if(delX == 0 && delY == 1) dir = Direction.NORTH;
+        else if(delX == 1 && delY == 1) dir = Direction.NORTHWEST;
+        else if(delX == 1 && delY == 0) dir = Direction.WEST;
+        else if(delX == 1 && delY == -1) dir =  Direction.SOUTHWEST;
+        else if (delX == 0 && delY == -1) dir = Direction.SOUTH;
+        else if (delX == -1 && delY == -1) dir = Direction.SOUTHEAST;
+        else if (delX == -1 && delY == 0) dir = Direction.EAST;
+        else if (delX == -1 && delY == 1) dir = Direction.NORTHEAST;
+        action.type = AntAction.AntActionType.ATTACK;
+        action.direction = dir;
+        if(action.direction == null) System.out.println("Direction not set!!");
+        return true;
+      }
+    }
+    return false;
+  }
+
   //</editor-fold>
 
 
