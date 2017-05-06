@@ -105,7 +105,7 @@ public class ClientRandomWalk
     if (reconnect) packetOut.myAntList = null;
     else
     {
-      int numAnts = 10;
+      int numAnts = 100; // Was 70
       for (int i=0; i<numAnts; i++)
       {
         AntType type = AntType.EXPLORER;

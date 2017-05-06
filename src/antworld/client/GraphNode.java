@@ -10,7 +10,7 @@ public class GraphNode
 
   public GraphNode(int x, int y)
   {
-    neighbors = new ArrayList<GraphNode>();
+    neighbors = new ArrayList<>();
     this.x = x;
     this.y = y;
   }

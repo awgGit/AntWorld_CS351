@@ -25,7 +25,7 @@ public class BuildGraph
     }
   }
 
-  static int resolution = 50;
+  static int resolution = 20;
   public static GraphNode[][] graphNodes = new GraphNode[2500][1500];
   public static double[][] densityMap = new double[2500/resolution][1500/resolution];
 
@@ -143,9 +143,9 @@ public class BuildGraph
       {
         if( graphNodes[x*resolution][y*resolution] == null) continue;
         //Search nearby nodes for nearest neighbor.
-        for(int a = -2; a < +2; a++)
+        for(int a = -5; a < +5; a++) /// Was +/- 10
         {
-          for( int b = -2; b < +2; b++)
+          for( int b = -5; b < +5; b++) // Was +/- 10
           {
             if( (x+a) * resolution >= 2500  || (x+a) < 0) continue;
             if( (y+b)* resolution >= 1500 || (y+b) < 0 ) continue;
@@ -165,7 +165,7 @@ public class BuildGraph
         {
           graphNodes[x][y] = new GraphNode(x, y);
           // Then connect them to the graph.
-          for (int a = -100; a < +100; a++)
+          for (int a = -resolution*3; a < +resolution*3; a++)
           {
             for (int b = -100; b < +100; b++)
             {

@@ -4,6 +4,7 @@ import antworld.common.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 /*
   Explores a graph, wherein each node of the graph has a list of neighbors, and a flag to show if it's been explored.
@@ -25,7 +26,7 @@ public class ExploreGraph
   private int origin_y;
 
   // Initialize the maps & lists.
-  public ExploreGraph(int nest_x, int nest_y )
+  public ExploreGraph( int nest_x, int nest_y )
   {
     path_taken = new HashMap<>();
     ant_ids = new ArrayList<>();
@@ -60,7 +61,8 @@ public class ExploreGraph
     GraphNode current_target; // Target of the ant we're using in this function.
 
     // If we're on our target node, mark as explored and change path to the next unexplored node.
-    if( ant.gridX == targets.get(ant.id).x && ant.gridY == targets.get(ant.id).y )
+    // Further, if the node we're traveling to has already been explored, backtrack.
+    if( Math.abs(ant.gridX - targets.get(ant.id).x)<2 && Math.abs(ant.gridY-targets.get(ant.id).y)<2 || targets.get(ant.id).explored )
     {
       ArrayList<GraphNode> path = path_taken.get(ant.id);
       targets.get(ant.id).explored = true;
@@ -68,43 +70,51 @@ public class ExploreGraph
       // If we've hit a dead end ...
       if( targets.get( ant.id ).getUnexploredNeighbors().isEmpty() )
       {
-        //System.out.println("No more nodes on this branch to explore - collapsing.");
-        if( path.size() <= 1 )
+        // If we've collapsed the tree and there's nowhere else to turn, try to find a random unexplored point,
+        // starting from where we are all the way to anywhere, with a preference for nearby nodes.
+        if( path.size() <= 1 ) // || some random 0-1 > 0.9
         {
-          GraphNode rp = null;
-
-          // If we wanted to assure a consistent direction (e.g. for patrols), this is where we'd do it - rather than
-          // picking a random next node, we could search ndoes for those most closely aligned to our current direction.
-          // There is of course no guarentee that a node in a similar direction exists, nor that the path one would take
-          // to it would at all times be in the same direction.
-          while( rp == null ){ rp = BuildGraph.graphNodes[Constants.random.nextInt(2500)][Constants.random.nextInt(1500)]; }
-          targets.put(ant.id, rp );
+          // DEBUGGING: I wanna see if this makes them fast all the time.
+//          GraphNode rp = null;
+//          int r = 1;
+//          //while( rp == null )
+//          while( rp == null || rp.explored )
+//          {
+//            rp = BuildGraph.graphNodes[ ((Constants.random.nextInt(r)+(ant.gridX/10))*10) % 2500 ][ ((Constants.random.nextInt(r)+(ant.gridY/10))*10) % 1500];
+//            r += Constants.random.nextFloat() > 0.98? 1 : 0; // Constants.random.nextInt(2500)>r? 1 : 0; // Asymptotically decay addition as distance expands.
+//          }
+//          targets.put(ant.id, rp );
         }
+        // On the other hand, if we can still collapse, do so.
         else
         {
           path.remove(path.size() - 1);
-          //System.out.println("Now I'm going to go to : " + path.get(path.size() - 1).x + " " + path.get(path.size() - 1).y);
           targets.put(ant.id, path.get(path.size() - 1));
         }
       }
-      else
+      else // If there are still neighbords to be explored, pick a random neighbor.
       {
         path.add(targets.get(ant.id)); // Add the last explored node to our list of traversed nodes.
-        //targets.put( ant.id, targets.get(ant.id).getUnexploredNeighbors().get(0) );
         targets.put( ant.id, targets.get(ant.id).getUnexploredNeighbors().get(
                 Constants.random.nextInt(targets.get(ant.id).getUnexploredNeighbors().size()) ) );
       }
       current_target = targets.get(ant.id);
       PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
       PathNode finalSpot = A_Star.board[current_target.x][current_target.y];
-      path_to_target.put( ant.id, A_Star.getPath( finalSpot, antSpot));
+      path_to_target.put( ant.id, A_Star.getPath( finalSpot, antSpot)); // Only recalculate if we're at a node.
     }
 
-    // This is the new code, to use A* (locally applied).
-//    PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
-//    PathNode finalSpot = A_Star.board[current_target.x][current_target.y];
-//    A_Star.getPath( finalSpot, antSpot)
     return moveAlongPath( ant, action, path_to_target.get(ant.id));
+  }
+
+  // Recalculate the path from ourselves to our target.
+  // Handy to have as its own function so we can call it after we get off path.
+  public void recalculatePath( AntData ant )
+  {
+    GraphNode current_target = targets.get(ant.id);
+    PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
+    PathNode finalSpot = A_Star.board[current_target.x][current_target.y];
+    path_to_target.put( ant.id, A_Star.getPath( finalSpot, antSpot));
   }
 
   // Implementation details are just instructions to say how to get out & follow a path.
@@ -118,12 +128,85 @@ public class ExploreGraph
       if (ant_ids.contains(ant.id))
       {
         if (exitNest(ant, action, data)) {}
-        else if (goExplore(ant, action)) {}
+        else
+        {
+          if (healSelf(ant,action)) {}         // Raycast, go to water, pick it up, go back to path.
+          //else if (getFood(ant,action)) {}        // If food is spotted and is nearby, go fetch it. If we hold food, go back to nest.
+          //else if (killOthers(ant,action)) {}     // If other ants are nearby, kill them.
+          //else if (askForHelp(ant,action)) {}     // If low health, enemy ants nearby, call for help.
+          //else if (respondToHelp(ant,action)) {}  // If nearby and in fighting shape, run to assist the ant needing help.
+          else if (goExplore(ant, action)) {}
+          if (jitter(ant, action, data)) {}
+        }
         ant.action = action;
       }
     }
   }
-  static boolean moveAlongPath( AntData ant, AntAction action, Map<PathNode,PathNode> path)
+
+  private boolean jitter( AntData ant, AntAction action, PacketToClient ptc )
+  {
+    for (AntData other_ant : ptc.myAntList)
+    {
+      if( other_ant.id == ant.id) continue; // Don't jitter with self...obviously
+      // For now, don't jitter if we're too close the nest.
+      if( Math.abs(ant.gridX-origin_x) < 20 && Math.abs(ant.gridY-origin_y) < 20 )
+      {
+        continue;
+      }
+      if (Math.abs(other_ant.gridX - ant.gridX) <= 1 && Math.abs(other_ant.gridY - ant.gridY) <= 1)
+      {
+        // Just twist aside, rather than randomly jitter.
+        action.direction = Direction.getRandomDir(); //  Direction.values()[ (action.direction.ordinal() + (Constants.random.nextBoolean()? 1 : 7)) % 8 ];
+        // COM // recalculatePath( ant );
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean healSelf( AntData ant, AntAction action )
+  {
+    // Don't heal if we don't need to. (High watermark)
+    if( ant.health >= ant.antType.getMaxHealth() ) return false;
+
+    // Heal if we have enough units and we're at sufficiently low health.
+    if( ant.carryUnits > 0 )
+    {
+      action.type = AntAction.AntActionType.HEAL;
+      action.direction = null;
+      action.quantity = ant.carryUnits;
+      return true;
+    }
+
+    // Don't go off path to heal unless we need to. (Low watermark)
+    if( ant.health > ant.antType.getMaxHealth()/3 ) return false;
+
+    // Point ourselves towards water.
+    action.direction = Direction.values()[ (int) (Math.floor( Raycasting.getBearingToWater(ant.gridX, ant.gridY) )/45.0) ];
+
+    System.out.println("Distance I see: " + Raycasting.getDistanceToWaterUsingVector(ant.gridX, ant.gridY, ant.gridX+action.direction.deltaX(), ant.gridY+action.direction.deltaY()));
+
+    // If we're next to water, just pick it up.
+    if( Raycasting.getDistanceToWaterUsingVector(ant.gridX, ant.gridY, ant.gridX+action.direction.deltaX(), ant.gridY+action.direction.deltaY()) <= 1
+            && Constants.random.nextBoolean() ) // So maybe move closer.
+    {
+      //action.direction = //Direction.getRandomDir(); // For now... I mean, it should work, but whatever.
+      action.type = AntAction.AntActionType.PICKUP;
+      action.quantity = ant.antType.getCarryCapacity();
+
+      // If we've moved off the path, then we'll need to recalculate it.
+      // COM // recalculatePath( ant ); // We'll only do this once per heal. This should in theory work...
+
+      return true;
+    }
+    else // If we aren't adjacent, then keep moving to the water.
+    {
+      action.type = AntAction.AntActionType.MOVE;
+      return true;
+    }
+  }
+
+  boolean moveAlongPath( AntData ant, AntAction action, Map<PathNode,PathNode> path)
   {
     Direction dir;
     PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
@@ -137,17 +220,24 @@ public class ExploreGraph
     }
     if( nextStep == null)
     {
-      System.out.println("Error, the spot that you're trying to go to is somehow invalid.");
-      return false;
+      recalculatePath( ant );
+      path = path_to_target.get(ant.id);
+      if( path.get(antSpot) == null)
+      {
+        System.out.println("ERROR: Can't seem to calculate a path.");
+        if( antSpot.x == targets.get(ant.id).x && antSpot.y == targets.get(ant.id).y)
+        {
+          // So if we get here, then we need to update the target.
+          System.out.println("   Well, because we're there: " + BuildGraph.graphNodes[ant.gridX][ant.gridY].explored );
+        }
+        else
+        {
+          System.out.println("   " + antSpot.x + " " + antSpot.y + " : " + targets.get(ant.id).x + " " + targets.get(ant.id).y);
+        }
+        return false;
+      }
+      // Otherwise, continue on our merry way ...
     }
-
-//    System.out.println("Here's the path A* found: ");
-//    System.out.printf("(Starting at (%d,%d))\n", ant.gridX, ant.gridY);
-//    while( nextStep != null)
-//    {
-//      System.out.println("  " + nextStep);
-//      nextStep = path.get(nextStep);
-//    }
 
     nextStep = path.get(antSpot);
 
@@ -169,6 +259,7 @@ public class ExploreGraph
     action.direction = dir;
     return true;
   }
+
   private boolean exitNest(AntData ant, AntAction action, PacketToClient ptc)
   {
     if (ant.state == AntAction.AntState.UNDERGROUND)
@@ -181,6 +272,8 @@ public class ExploreGraph
         action.quantity = ant.carryUnits;
         return true;
       }
+
+      // Something, something, something ... dark side.
       action.x = origin_x;
       action.y = origin_y;
 
