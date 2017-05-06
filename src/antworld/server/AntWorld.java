@@ -68,14 +68,13 @@ public class AntWorld implements ActionListener
     worldWidth = map.getWidth();
     worldHeight = map.getHeight();
 
-
     //smoothMap(map);
     //if (map!=null) System.exit(1);
 
     readAntWorld(map);
 
     foodSpawnList = new ArrayList<>();
-    createFoodSpawnSite(true); // AWG: Changed to false for realistic food patterns
+    createFoodSpawnSite(false); // AWG: Changed to false for realistic food patterns
     System.out.println("World: " + worldWidth + " x " + worldHeight);
 
     for (Nest nest : nestList)

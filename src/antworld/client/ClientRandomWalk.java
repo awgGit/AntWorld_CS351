@@ -165,6 +165,7 @@ public class ClientRandomWalk
       }
     }
   }
+
   /**
    * Called after socket has been created.<br>
    * This simple example client runs in a single thread. <br>

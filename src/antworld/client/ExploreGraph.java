@@ -198,6 +198,28 @@ public class ExploreGraph
     return moveAlongPath( ant, action, path );
   }
 
+  // Jitter to avoid getting stuck...
+  private boolean jitter( AntData ant, AntAction action, PacketToClient ptc )
+  {
+    for (AntData other_ant : ptc.myAntList)
+    {
+      if( other_ant.id == ant.id) continue; // Don't jitter with self...obviously
+      // For now, don't jitter if we're too close the nest.
+      if( Math.abs(ant.gridX-origin_x) < 20 && Math.abs(ant.gridY-origin_y) < 20 )
+      {
+        continue;
+      }
+      if (Math.abs(other_ant.gridX - ant.gridX) <= 1 && Math.abs(other_ant.gridY - ant.gridY) <= 1)
+      {
+        // Just twist aside, rather than randomly jitter.
+        action.direction = Direction.getRandomDir(); //  Direction.values()[ (action.direction.ordinal() + (Constants.random.nextBoolean()? 1 : 7)) % 8 ];
+        // COM // recalculatePath( ant );
+        return true;
+      }
+    }
+    return false;
+  }
+
   static boolean enterNest( AntData ant, AntAction action, PacketToClient ptc )
   {
     int nestY = ptc.nestData[ptc.myNest.ordinal()].centerY;
@@ -227,26 +249,84 @@ public class ExploreGraph
         {
           System.out.println("Antid: [" + ant.id + "] is taking action EXITNEST");
         }
-        else if (goHomeIfCarrying(ant, action, data))
+        else
         {
-          System.out.println("Antid: [" + ant.id + "] is taking action GOHOMEIFCARRYINGORHURT");
+          if (goHomeIfCarrying(ant, action, data))
+          {
+            System.out.println("Antid: [" + ant.id + "] is taking action GOHOMEIFCARRYINGORHURT");
+          }
+          if(healSelf(ant,action))
+          {
+            System.out.printf("ant_it : [%d] is taking action HEALSELF\n", ant.id);
+          }
+          else if (pickUpFoodAdjacent(ant, action, data))
+          {
+            System.out.println("Antid: [" + ant.id + "] is taking action PICKUPFOODADJACENT");
+          }
+          else if (goToFood(ant, action, data))
+          {
+            System.out.println("Antid: [" + ant.id + "] is taking action GOTOFOOD");
+          }
+          else if (goExplore(ant, action))
+          {
+            System.out.println("Antid: [" + ant.id + "] is taking action GOEXPLORE");
+          }
+          if( jitter(ant,action,data))
+          {
+            System.out.println("initiating jitterbug");
+          }
         }
-        else if (pickUpFoodAdjacent(ant, action, data))
-        {
-          System.out.println("Antid: [" + ant.id + "] is taking action PICKUPFOODADJACENT");
-        }
-        else if (goToFood(ant, action, data))
-        {
-          System.out.println("Antid: [" + ant.id + "] is taking action GOTOFOOD");
-        }
-        else if (goExplore(ant, action))
-        {
-          System.out.println("Antid: [" + ant.id + "] is taking action GOEXPLORE");
-        }
+
+
+
         ant.action = action;
       }
     }
   }
+
+  private boolean healSelf( AntData ant, AntAction action )
+  {
+    // Don't heal if we don't need to. (High watermark)
+    if( ant.health >= ant.antType.getMaxHealth() ) return false;
+
+    // Heal if we have enough units and we're at sufficiently low health.
+    if( ant.carryUnits > 0 )
+    {
+      action.type = AntAction.AntActionType.HEAL;
+      action.direction = null;
+      action.quantity = ant.carryUnits;
+      return true;
+    }
+
+    // Don't go off path to heal unless we need to. (Low watermark)
+    if( ant.health > ant.antType.getMaxHealth()/3 ) return false;
+
+    // Point ourselves towards water.
+    action.direction = Direction.values()[ (int) (Math.floor( Raycasting.getBearingToWater(ant.gridX, ant.gridY) )/45.0) ];
+
+    System.out.println("Distance I see: " + Raycasting.getDistanceToWaterUsingVector(ant.gridX, ant.gridY, ant.gridX+action.direction.deltaX(), ant.gridY+action.direction.deltaY()));
+
+    // If we're next to water, just pick it up.
+    if( Raycasting.getDistanceToWaterUsingVector(ant.gridX, ant.gridY, ant.gridX+action.direction.deltaX(), ant.gridY+action.direction.deltaY()) <= 1
+            && Constants.random.nextBoolean() ) // So maybe move closer.
+    {
+      //action.direction = //Direction.getRandomDir(); // For now... I mean, it should work, but whatever.
+      action.type = AntAction.AntActionType.PICKUP;
+      action.quantity = ant.antType.getCarryCapacity();
+
+      // If we've moved off the path, then we'll need to recalculate it.
+      // COM // recalculatePath( ant ); // We'll only do this once per heal. This should in theory work...
+
+      return true;
+    }
+    else // If we aren't adjacent, then keep moving to the water.
+    {
+      action.type = AntAction.AntActionType.MOVE;
+      return true;
+    }
+  }
+
+
   private boolean moveAlongPath( AntData ant, AntAction action, Map<PathNode,PathNode> path)
   {
     Direction dir;
@@ -268,18 +348,7 @@ public class ExploreGraph
        System.out.println(path.get(antSpot));
       path_to_target.put(ant.id, path);
       nextStep = path.get(antSpot2);
-      //  return false;
-      //if(ant.gridX == target.x && ant.gridY == target.y) System.out.println("We have problems!");
-      //System.out.println("Error, the spot that you're trying to go to is somehow invalid.");
     }
-
-//    System.out.println("Here's the path A* found: ");
-//    System.out.printf("(Starting at (%d,%d))\n", ant.gridX, ant.gridY);
-//    while( nextStep != null)
-//    {
-//      System.out.println("  " + nextStep);
-//      nextStep = path.get(nextStep);
-//    }
 
     if((ant.gridY-1 == nextStep.y)&& (ant.gridX == nextStep.x)) { dir = Direction.NORTH; }
     else if((ant.gridY-1 == nextStep.y)&& (ant.gridX+1 == nextStep.x)) { dir = Direction.NORTHEAST; }
