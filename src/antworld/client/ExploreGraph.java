@@ -172,28 +172,20 @@ public class ExploreGraph
     }
     return false;
   }
-  static  boolean goHomeIfCarryingOrHurt(AntData ant, AntAction action, PacketToClient ptc)
+
+  private boolean goHomeIfCarrying(AntData ant, AntAction action, PacketToClient ptc)
   {
     return  enterNest(ant,action,ptc) // Enter the nest if we're close enough to it.
-            || goHomeIfCarryingFood(ant,action,ptc,ant.antType.getCarryCapacity()) // Return if full with food.
-            || goHomeIfCarryingWater(ant,action,ptc,ant.antType.getCarryCapacity()) // Return if full with water.
-            || goHomeIfHurt(ant,action,ptc,ant.antType.getMaxHealth()/2 ); // Return if below or at 50% health.
+            || goHomeIfCarryingFood(ant,action,ptc,ant.antType.getCarryCapacity()/2); // Return if full with food.
   }
 
   // Split the logic into multiple functions
-  static boolean goHomeIfCarryingWater( AntData ant, AntAction action, PacketToClient ptc, int carry_threshold)
+  private boolean goHomeIfCarryingFood( AntData ant, AntAction action, PacketToClient ptc, int carry_threshold)
   {
     return ant.carryType == GameObject.GameObjectType.FOOD && ant.carryUnits >= carry_threshold && goHome(ant, action, ptc);
   }
-  static boolean goHomeIfCarryingFood( AntData ant, AntAction action, PacketToClient ptc, int carry_threshold)
-  {
-    return ant.carryType == GameObject.GameObjectType.FOOD && ant.carryUnits >= carry_threshold && goHome(ant, action, ptc);
-  }
-  static boolean goHomeIfHurt( AntData ant, AntAction action, PacketToClient ptc, int health_threshold )
-  {
-    return ant.health <= health_threshold && goHome(ant, action, ptc);
-  }
-  static boolean goHome( AntData ant, AntAction action, PacketToClient ptc )
+
+  private boolean goHome( AntData ant, AntAction action, PacketToClient ptc )
   {
     int nest_y = ptc.nestData[ptc.myNest.ordinal()].centerY;
     int nest_x = ptc.nestData[ptc.myNest.ordinal()].centerX;
@@ -202,6 +194,7 @@ public class ExploreGraph
     PathNode nestSpot = A_Star.board[nest_x][nest_y];
 
     Map<PathNode,PathNode> path = A_Star.getPath( nestSpot, antSpot, ptc, ant.id);
+    path_to_target.put(ant.id, path);
     return moveAlongPath( ant, action, path );
   }
 
@@ -234,7 +227,7 @@ public class ExploreGraph
         {
           System.out.println("Antid: [" + ant.id + "] is taking action EXITNEST");
         }
-        else if (goHomeIfCarryingOrHurt(ant, action, data))
+        else if (goHomeIfCarrying(ant, action, data))
         {
           System.out.println("Antid: [" + ant.id + "] is taking action GOHOMEIFCARRYINGORHURT");
         }
@@ -254,11 +247,10 @@ public class ExploreGraph
       }
     }
   }
-  static boolean moveAlongPath( AntData ant, AntAction action, Map<PathNode,PathNode> path)
+  private boolean moveAlongPath( AntData ant, AntAction action, Map<PathNode,PathNode> path)
   {
     Direction dir;
     PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
-
     PathNode nextStep = path.get(antSpot);
 
     if( antSpot == null)
@@ -268,8 +260,11 @@ public class ExploreGraph
     }
     if( nextStep == null)
     {
-      System.out.println("Error, the spot that you're trying to go to is somehow invalid.");
-      return false;
+      GraphNode target = targets.get(ant.id);
+      recalculatePath(ant, target);
+        nextStep = path.get(antSpot);
+      if(ant.gridX == target.x && ant.gridY == target.y) System.out.println("We have problems!");
+      //System.out.println("Error, the spot that you're trying to go to is somehow invalid.");
     }
 
 //    System.out.println("Here's the path A* found: ");
@@ -279,8 +274,6 @@ public class ExploreGraph
 //      System.out.println("  " + nextStep);
 //      nextStep = path.get(nextStep);
 //    }
-
-    nextStep = path.get(antSpot);
 
     if((ant.gridY-1 == nextStep.y)&& (ant.gridX == nextStep.x)) { dir = Direction.NORTH; }
     else if((ant.gridY-1 == nextStep.y)&& (ant.gridX+1 == nextStep.x)) { dir = Direction.NORTHEAST; }
@@ -300,6 +293,15 @@ public class ExploreGraph
     action.direction = dir;
     return true;
   }
+
+  private void recalculatePath(AntData ant, GraphNode target)
+  {
+    PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
+    PathNode finalSpot = A_Star.board[target.x][target.y];
+    Map<PathNode, PathNode> path = A_Star.getPath(finalSpot, antSpot);
+    path_to_target.put(ant.id, path);
+  }
+
   private boolean exitNest(AntData ant, AntAction action, PacketToClient ptc)
   {
     if (ant.state == AntAction.AntState.UNDERGROUND)
