@@ -19,8 +19,8 @@ public class ExploreGraph
   Map<Integer,ArrayList<GraphNode>> path_taken; // The *big* nodes traversed.
   Map<Integer,Map<PathNode,PathNode>> path_to_target; // The *grid* (small) nodes traversed.
   Map<Integer, Boolean> homePath_set;
+  Map<Integer, Boolean> foodPathTaken;
   ArrayList<Integer> ant_ids;
-
 
   private int origin_x;
   private int origin_y;
@@ -32,6 +32,7 @@ public class ExploreGraph
     ant_ids = new ArrayList<>();
     targets = new HashMap<>();
     path_to_target = new HashMap<>();
+    foodPathTaken = new HashMap<>();
     homePath_set = new HashMap<>();
 
 
@@ -56,6 +57,7 @@ public class ExploreGraph
     targets.put( ant.id, BuildGraph.graphNodes[ant.gridX][ant.gridY] );
     path_to_target.put( ant.id, null );
     homePath_set.put(ant.id, false);
+    foodPathTaken.putIfAbsent(ant.id, false);
   }
 
   // The logic for how to explore the graph. Probably requires some more attention.
@@ -133,6 +135,7 @@ public class ExploreGraph
               action.direction = dir;
               action.type = AntAction.AntActionType.PICKUP;
               action.quantity = ant.antType.getCarryCapacity();
+              foodPathTaken.replace(ant.id, true, false);
               return true;
             }
           }
@@ -150,26 +153,38 @@ public class ExploreGraph
     int distance;
     if( ptc.foodList != null)
     {
-      for (GameObject food : ptc.foodList)
+      for (FoodData food : ptc.foodList)
       {
+        if(food.quantity <= 2) continue;
         if (food.objType == GameObject.GameObjectType.WATER) continue;
         x_diff = Math.abs(food.gridX - ant.gridX);
         y_diff = Math.abs(food.gridY - ant.gridY);
         distance = (int) Math.sqrt((x_diff * x_diff) + (y_diff * y_diff));
         if(distance < ant.antType.getVisionRadius())
         {
-          int xDiff = ant.gridX - food.gridX;
-          int yDiff = ant.gridY - food.gridY;
-          if (xDiff < 0 && yDiff > 0) action.direction = Direction.NORTHEAST;
-          else if (xDiff == 0 && yDiff > 0) action.direction = Direction.NORTH;
-          else if (xDiff > 0 && yDiff > 0) action.direction = Direction.NORTHWEST;
-          else if (xDiff > 0 && yDiff == 0) action.direction = Direction.WEST;
-          else if (xDiff > 0 && yDiff < 0) action.direction = Direction.SOUTHWEST;
-          else if (xDiff == 0 && yDiff > 0) action.direction = Direction.SOUTH;
-          else if (xDiff < 0 && yDiff < 0) action.direction = Direction.SOUTHEAST;
-          else if (xDiff < 0 && yDiff == 0) action.direction = Direction.EAST;
-          action.type = AntAction.AntActionType.MOVE;
-          action.quantity = ant.antType.getCarryCapacity();
+          if(!foodPathTaken.get(ant.id))
+          {
+            foodPathTaken.replace(ant.id, false, true);
+            PathNode foodSpot = A_Star.board[food.gridX][food.gridY];
+            PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
+            path_to_target.put(ant.id, A_Star.getPath(foodSpot, antSpot));
+            moveAlongPath(ant, action, path_to_target.get(ant.id));
+          }
+          else
+          {
+            moveAlongPath(ant, action, path_to_target.get(ant.id));
+          }
+//          int xDiff = ant.gridX - food.gridX;
+//          int yDiff = ant.gridY - food.gridY;
+//          if (xDiff < 0 && yDiff > 0) action.direction = Direction.NORTHEAST;
+//          else if (xDiff > 0 && yDiff > 0) action.direction = Direction.NORTHWEST;
+//          else if (xDiff > 0 && yDiff < 0) action.direction = Direction.SOUTHWEST;
+//          else if (xDiff < 0 && yDiff < 0) action.direction = Direction.SOUTHEAST;
+//          else if (xDiff == 0 && yDiff > 0) action.direction = Direction.NORTH;
+//          else if (xDiff > 0 && yDiff == 0) action.direction = Direction.WEST;
+//          else if (xDiff == 0 && yDiff > 0) action.direction = Direction.SOUTH;
+//          else if (xDiff < 0 && yDiff == 0) action.direction = Direction.EAST;
+
           return true;
         }
       }
@@ -225,10 +240,10 @@ public class ExploreGraph
     {
       if( other_ant.id == ant.id) continue; // Don't jitter with self...obviously
       // For now, don't jitter if we're too close the nest.
-      if( Math.abs(ant.gridX-origin_x) < 20 && Math.abs(ant.gridY-origin_y) < 20 )
-      {
-        continue;
-      }
+//      if( Math.abs(ant.gridX-origin_x) < 20 && Math.abs(ant.gridY-origin_y) < 20 )
+//      {
+//        continue;
+//      }
       if (Math.abs(other_ant.gridX - ant.gridX) <= 1 && Math.abs(other_ant.gridY - ant.gridY) <= 1)
       {
         // Just twist aside, rather than randomly jitter.
@@ -240,12 +255,12 @@ public class ExploreGraph
     return false;
   }
 
-  private boolean enterNest( AntData ant, AntAction action, PacketToClient ptc )
+  public boolean enterNest( AntData ant, AntAction action, PacketToClient ptc )
   {
     int nestY = ptc.nestData[ptc.myNest.ordinal()].centerY;
     int nestX = ptc.nestData[ptc.myNest.ordinal()].centerX;
 
-    if( (Math.abs(ant.gridX-nestX)+Math.abs(ant.gridY-nestY) < 15) && (ant.carryUnits !=0 || ant.health < ant.antType.getMaxHealth() / 2))
+    if( (Math.abs(ant.gridX-nestX)+Math.abs(ant.gridY-nestY) < 15) && (ant.carryUnits > 0))
     {
       action.direction = null;
       action.type = AntAction.AntActionType.ENTER_NEST;
@@ -297,6 +312,9 @@ public class ExploreGraph
             System.out.println("initiating jitterbug");
           }
         }
+
+
+
         ant.action = action;
       }
     }
@@ -359,6 +377,7 @@ public class ExploreGraph
     if( nextStep == null)
     {
       GraphNode target = targets.get(ant.id);
+      //recalculatePath(ant, target);
       PathNode antSpot2 = A_Star.board[ant.gridX][ant.gridY];
       PathNode finalSpot = A_Star.board[target.x][target.y];
       path = A_Star.getPath(finalSpot, antSpot);
