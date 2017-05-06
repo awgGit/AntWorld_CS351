@@ -1,18 +1,11 @@
 package antworld.server;
 
-import java.util.Random;
-
-import antworld.common.AntAction;
+import antworld.common.*;
 import antworld.common.AntAction.AntActionType;
 import antworld.common.AntAction.AntState;
-import antworld.common.AntData;
-import antworld.common.AntType;
-import antworld.common.Constants;
-import antworld.common.FoodData;
 import antworld.common.GameObject.GameObjectType;
-import antworld.common.LandType;
-import antworld.common.NestNameEnum;
-import antworld.common.TeamNameEnum;
+
+import java.util.Random;
 
 public class AntMethods
 {
@@ -186,7 +179,8 @@ public class AntMethods
         ant.carryType = GameObjectType.WATER;
       }
       else
-      {  
+      {
+
         groundFood = targetCell.getFoodOrWater();
         if (groundFood == null) return AntActionType.NOOP;
 

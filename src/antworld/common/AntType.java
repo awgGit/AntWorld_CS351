@@ -23,7 +23,8 @@ public enum AntType
       { return Math.max(1,super.getBaseMovementTicksPerCell()/3);
       }
 
-      public int getVisionRadius() {return super.getVisionRadius()*2;}
+      public int getVisionRadius() {
+        return super.getVisionRadius()*2;}
     },
 
   WARRIOR
