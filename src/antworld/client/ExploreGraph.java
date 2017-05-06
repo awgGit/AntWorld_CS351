@@ -4,7 +4,6 @@ import antworld.common.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 /*
   Explores a graph, wherein each node of the graph has a list of neighbors, and a flag to show if it's been explored.
@@ -89,12 +88,14 @@ public class ExploreGraph
         else
         {
           path.remove(path.size() - 1);
+          //System.out.println("Now I'm going to go to : " + path.get(path.size() - 1).x + " " + path.get(path.size() - 1).y);
           targets.put(ant.id, path.get(path.size() - 1));
         }
       }
       else // If there are still neighbords to be explored, pick a random neighbor.
       {
         path.add(targets.get(ant.id)); // Add the last explored node to our list of traversed nodes.
+        //targets.put( ant.id, targets.get(ant.id).getUnexploredNeighbors().get(0) );
         targets.put( ant.id, targets.get(ant.id).getUnexploredNeighbors().get(
                 Constants.random.nextInt(targets.get(ant.id).getUnexploredNeighbors().size()) ) );
       }
@@ -115,6 +116,112 @@ public class ExploreGraph
     PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
     PathNode finalSpot = A_Star.board[current_target.x][current_target.y];
     path_to_target.put( ant.id, A_Star.getPath( finalSpot, antSpot));
+  }
+
+  public boolean pickUpFoodAdjacent(AntData ant, AntAction action, PacketToClient data)
+  {
+    if(ant.carryUnits >= ant.antType.getCarryCapacity()) return false;
+
+    int xDiff;
+    int yDiff;
+    if(data.foodList != null)
+    {
+      for(GameObject food : data.foodList)
+      {
+        if(food.objType == GameObject.GameObjectType.WATER) continue;
+        xDiff = Math.abs(food.gridX - ant.gridX);
+        yDiff = Math.abs(food.gridY - ant.gridY);
+        if((xDiff + yDiff) <= 1 || (xDiff == 1 && yDiff == 1))
+        {
+          for(Direction dir : Direction.values())
+          {
+            if(ant.gridX + dir.deltaX() == food.gridX && ant.gridY + dir.deltaY() == food.gridY)
+            {
+              action.direction = dir;
+              action.type = AntAction.AntActionType.PICKUP;
+              action.quantity = ant.antType.getCarryCapacity();
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  private boolean goToFood(AntData ant, AntAction action, PacketToClient ptc)
+  {
+    if( ant.carryUnits >= ant.antType.getCarryCapacity() ) return false;
+    int x_diff;
+    int y_diff;
+    int distance;
+    if( ptc.foodList != null)
+    {
+      for (GameObject food : ptc.foodList)
+      {
+        if (food.objType == GameObject.GameObjectType.WATER) continue;
+        x_diff = Math.abs(food.gridX - ant.gridX);
+        y_diff = Math.abs(food.gridY - ant.gridY);
+        distance = (int) Math.sqrt((x_diff * x_diff) + (y_diff * y_diff));
+        if(distance < ant.antType.getVisionRadius())
+        {
+          int xDiff = ant.gridX - food.gridX;
+          int yDiff = ant.gridY - food.gridY;
+          if (xDiff < 0 && yDiff > 0) action.direction = Direction.NORTHEAST;
+          else if (xDiff == 0 && yDiff > 0) action.direction = Direction.NORTH;
+          else if (xDiff > 0 && yDiff > 0) action.direction = Direction.NORTHWEST;
+          else if (xDiff > 0 && yDiff == 0) action.direction = Direction.WEST;
+          else if (xDiff > 0 && yDiff < 0) action.direction = Direction.SOUTHWEST;
+          else if (xDiff == 0 && yDiff > 0) action.direction = Direction.SOUTH;
+          else if (xDiff < 0 && yDiff < 0) action.direction = Direction.SOUTHEAST;
+          else if (xDiff < 0 && yDiff == 0) action.direction = Direction.EAST;
+          action.type = AntAction.AntActionType.MOVE;
+          action.quantity = ant.antType.getCarryCapacity();
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private boolean goHomeIfCarrying(AntData ant, AntAction action, PacketToClient ptc)
+  {
+    return  enterNest(ant,action,ptc) // Enter the nest if we're close enough to it.
+            || goHomeIfCarryingFood(ant,action,ptc,ant.antType.getCarryCapacity()/2); // Return if full with food.
+  }
+
+  // Split the logic into multiple functions
+  private boolean goHomeIfCarryingFood( AntData ant, AntAction action, PacketToClient ptc, int carry_threshold)
+  {
+    return ant.carryType == GameObject.GameObjectType.FOOD && ant.carryUnits >= carry_threshold && goHome(ant, action, ptc);
+  }
+
+  private boolean goHome( AntData ant, AntAction action, PacketToClient ptc )
+  {
+    int nest_y = ptc.nestData[ptc.myNest.ordinal()].centerY;
+    int nest_x = ptc.nestData[ptc.myNest.ordinal()].centerX;
+
+    PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
+    PathNode nestSpot = A_Star.board[nest_x][nest_y];
+
+    Map<PathNode,PathNode> path = A_Star.getPath( nestSpot, antSpot, ptc, ant.id);
+    path_to_target.put(ant.id, path);
+    return moveAlongPath( ant, action, path );
+  }
+
+  static boolean enterNest( AntData ant, AntAction action, PacketToClient ptc )
+  {
+    int nestY = ptc.nestData[ptc.myNest.ordinal()].centerY;
+    int nestX = ptc.nestData[ptc.myNest.ordinal()].centerX;
+
+    if( (Math.abs(ant.gridX-nestX)+Math.abs(ant.gridY-nestY) < 15) && (ant.carryUnits !=0 || ant.health < ant.antType.getMaxHealth() / 2))
+    {
+      action.direction = null;
+      action.type = AntAction.AntActionType.ENTER_NEST;
+      action.quantity = ant.carryUnits;
+      return true;
+    }
+    return false;
   }
 
   // Implementation details are just instructions to say how to get out & follow a path.
@@ -272,8 +379,6 @@ public class ExploreGraph
         action.quantity = ant.carryUnits;
         return true;
       }
-
-      // Something, something, something ... dark side.
       action.x = origin_x;
       action.y = origin_y;
 
