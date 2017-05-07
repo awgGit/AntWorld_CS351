@@ -62,6 +62,21 @@ public class ClientRandomWalk
   {
     PacketToServer packetOut = new PacketToServer(myTeam);
     exploreGraph.setAntActions( packetIn ); // Update all of the ants.
+/*
+    for(int j = 0; j < exploreGraph.food_sites_to_broadcast; j++)
+    {
+      int convoyAnts = 10;
+      if(exploreGraph.pheromone_path_generated[j] && !exploreGraph.convoy_sent[j])
+      {
+        exploreGraph.convoy_sent[j] = true;
+        for(int k = 0; k < convoyAnts; k++)
+        {
+          AntType type = AntType.WORKER;
+          packetOut.myAntList.add(new AntData(type, myTeam));
+        }
+      }
+    }
+*/
     for( AntData ant : packetIn.myAntList ) { packetOut.myAntList.add(ant); }
     return packetOut;
   }
@@ -129,9 +144,11 @@ public class ClientRandomWalk
     centerY = packetIn.nestData[myNestName.ordinal()].centerY;
 
     System.out.println("ClientRandomWalk: ==== Nest Assigned ===>: " + myNestName);
-    A_Star.buildBoard(); // AWG: Transform the board into interconnected graph nodes.
+    A_Star board = new A_Star();
+    board.buildBoard();
+    //A_Star.buildBoard(); // AWG: Transform the board into interconnected graph nodes.
     buildGraph = new BuildGraph(); // Build a more heavily discretized graph to explore.
-    exploreGraph = new ExploreGraph( centerX, centerY ); // Explore the discretized graph using DFS & local A*.
+    exploreGraph = new ExploreGraph(board, centerX, centerY); // Explore the discretized graph using DFS & local A*.
     for( AntData ant : packetIn.myAntList ) { exploreGraph.addAnt( ant ); } // Actually get the ants on the list so
                                                                             // that they'll explore.
   }

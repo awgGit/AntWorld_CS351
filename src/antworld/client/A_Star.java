@@ -10,13 +10,15 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-public class A_Star
+public class A_Star implements Runnable
 {
   public static PathNode[][] board = new PathNode[2500][1500];
   public static PathNode[][] nonTouchedBoard = new PathNode[2500][1500];
-
+  public PathNode start_position, end_position;
+  public Map<PathNode, PathNode> path, nest_to_food, food_to_nest;
   private static BufferedImage loadedImage;
-  static
+
+  public A_Star()
   {
     try
     {
@@ -29,7 +31,20 @@ public class A_Star
     }
   }
 
+  public void setPath(Map<Integer, Map<PathNode, PathNode>> relativePath, int key, PathNode p1, PathNode p2)
+  {
+    start_position = p1;
+    end_position = p2;
+    relativePath.put(key, path);
+  }
 
+  @Override
+  public void run()
+  {
+
+    path = getPath(end_position, start_position);
+
+  }
   // AWG: I needed a simple getPath without the ant stuff still. Same idea as the other one but with fewer args, overload
   public static Map<PathNode,PathNode> getPath(PathNode start_position, PathNode end_position)
   {
@@ -131,16 +146,22 @@ public class A_Star
 /**
  * Set all the locations of other ants to null so this ant cant go there.
  */
+/*
     for(int i =0; i< ptc.myAntList.size(); i++)
     {
       if(ptc.myAntList.size() == 1)
       {
         break;
       }
-      if(ptc.myAntList.get(i).id != antID )
+      if(ptc.myAntList.get(i).id != antID)
       {
         board[ptc.myAntList.get(i).gridX][ptc.myAntList.get(i).gridY] = null;
       }
+    }
+*/
+    for(int j = 0; j < ptc.foodList.size(); j++)
+    {
+      board[ptc.foodList.get(j).gridX][ptc.foodList.get(j).gridY] = null;
     }
 
     while( !frontier.isEmpty() )
@@ -182,6 +203,7 @@ public class A_Star
     /**
      * Once this ants path has been created, set all the places that ants are on as available positions.
      */
+    /*
     for(int i =0; i< ptc.myAntList.size(); i++)
     {
       if(ptc.myAntList.size() == 1)
@@ -193,6 +215,12 @@ public class A_Star
         board[ptc.myAntList.get(i).gridX][ptc.myAntList.get(i).gridY] =
                 new PathNode(ptc.myAntList.get(i).gridX,ptc.myAntList.get(i).gridY,0);
       }
+    }
+    */
+    for(int j = 0; j < ptc.foodList.size(); j++)
+    {
+      board[ptc.foodList.get(j).gridX][ptc.foodList.get(j).gridY] =
+              new PathNode(ptc.foodList.get(j).gridX, ptc.foodList.get(j).gridY, 0);
     }
     return came_from;
   }
