@@ -20,6 +20,7 @@ public class ExploreGraph
   Map<Integer,Map<PathNode,PathNode>> path_to_target; // The *grid* (small) nodes traversed.
   Map<Integer, Boolean> homePath_set;
   Map<Integer, Boolean> foodPathTaken;
+  //Map<Integer, Boolean> homePathShortcutSet;
   ArrayList<Integer> ant_ids;
 
   private int origin_x;
@@ -58,6 +59,7 @@ public class ExploreGraph
     path_to_target.put( ant.id, null );
     homePath_set.put(ant.id, false);
     foodPathTaken.putIfAbsent(ant.id, false);
+    //homePathShortcutSet.putIfAbsent(ant.id, false);
   }
 
   // The logic for how to explore the graph. Probably requires some more attention.
@@ -174,17 +176,6 @@ public class ExploreGraph
           {
             moveAlongPath(ant, action, path_to_target.get(ant.id));
           }
-//          int xDiff = ant.gridX - food.gridX;
-//          int yDiff = ant.gridY - food.gridY;
-//          if (xDiff < 0 && yDiff > 0) action.direction = Direction.NORTHEAST;
-//          else if (xDiff > 0 && yDiff > 0) action.direction = Direction.NORTHWEST;
-//          else if (xDiff > 0 && yDiff < 0) action.direction = Direction.SOUTHWEST;
-//          else if (xDiff < 0 && yDiff < 0) action.direction = Direction.SOUTHEAST;
-//          else if (xDiff == 0 && yDiff > 0) action.direction = Direction.NORTH;
-//          else if (xDiff > 0 && yDiff == 0) action.direction = Direction.WEST;
-//          else if (xDiff == 0 && yDiff > 0) action.direction = Direction.SOUTH;
-//          else if (xDiff < 0 && yDiff == 0) action.direction = Direction.EAST;
-
           return true;
         }
       }
@@ -217,9 +208,17 @@ public class ExploreGraph
       PathNode target = A_Star.board[targets.get(ant.id).x][targets.get(ant.id).y];
       path = A_Star.getPath(target, antSpot);
       path_to_target.put(ant.id, path);
-      homePath_set.put(ant.id, true);
+      homePath_set.replace(ant.id, false, true);
       System.out.println("Ant[" + ant.id + "]: Home Path Set!");
     }
+//    else if( (antSpot.x < nest_x + Constants.NEST_RADIUS * 2 && antSpot.y < nest_y + Constants.NEST_RADIUS * 2)
+//            && (antSpot.x > nest_x - Constants.NEST_RADIUS * 2 && antSpot.y > nest_y - Constants.NEST_RADIUS * 2) )
+//    {
+//      PathNode target = A_Star.board[nest_x][nest_y];
+//      path = A_Star.getPath(target, antSpot);
+//      path_to_target.put(ant.id, path);
+//      homePathShortcutSet.replace(ant.id, false, true);
+//    }
     else if(antSpot.x == targets.get(ant.id).x && antSpot.y == targets.get(ant.id).y)
     {
       ArrayList<GraphNode> nodes = path_taken.get(ant.id);
@@ -265,7 +264,8 @@ public class ExploreGraph
       action.direction = null;
       action.type = AntAction.AntActionType.ENTER_NEST;
       action.quantity = ant.carryUnits;
-      homePath_set.put(ant.id, false);
+      homePath_set.replace(ant.id, true, false);
+      //homePathShortcutSet.replace(ant.id, true, false);
       return true;
     }
     return false;
@@ -287,14 +287,18 @@ public class ExploreGraph
         }
         else
         {
-          if (goHomeIfCarrying(ant, action, data))
+          if(healSelf(ant,action))
+          {
+          System.out.printf("ant_it : [%d] is taking action HEALSELF\n", ant.id);
+          }
+          else if (goHomeIfCarrying(ant, action, data))
           {
             System.out.println("Antid: [" + ant.id + "] is taking action GOHOMEIFCARRYINGORHURT");
           }
-          else if(healSelf(ant,action))
-          {
-            System.out.printf("ant_it : [%d] is taking action HEALSELF\n", ant.id);
-          }
+//          else if(healSelf(ant,action))
+//          {
+//            System.out.printf("ant_it : [%d] is taking action HEALSELF\n", ant.id);
+//          }
           else if (pickUpFoodAdjacent(ant, action, data))
           {
             System.out.println("Antid: [" + ant.id + "] is taking action PICKUPFOODADJACENT");
@@ -347,6 +351,19 @@ public class ExploreGraph
             && Constants.random.nextBoolean() ) // So maybe move closer.
     {
       //action.direction = //Direction.getRandomDir(); // For now... I mean, it should work, but whatever.
+      if(ant.carryType == GameObject.GameObjectType.FOOD)
+      {
+        for (Direction dir : Direction.values())
+        {
+          if (A_Star.board[ant.gridX + dir.deltaX()][ant.gridY + dir.deltaY()] != null)
+          {
+            action.direction = dir;
+            action.type = AntAction.AntActionType.DROP;
+            action.quantity = ant.antType.getCarryCapacity();
+            return true;
+          }
+        }
+      }
       action.type = AntAction.AntActionType.PICKUP;
       action.quantity = ant.antType.getCarryCapacity();
 
