@@ -153,8 +153,8 @@ public class BuildGraph
 
             // Experimental : (May need review once integrated with other code)
             // Raycast towards the other graph node - if there's water in the way, cancel the neighbor.
-            int distance_to_water = Raycasting.getDistanceToWaterUsingVector( x*resolution, y*resolution, (x+a)*resolution, (y+b)*resolution );
-            if( distance_to_water > (Math.abs(a*resolution) + Math.abs(b*resolution)) ) continue;
+            //int distance_to_water = Raycasting.getDistanceToWaterUsingVector( x*resolution, y*resolution, (x+a)*resolution, (y+b)*resolution );
+            //if( distance_to_water > (Math.abs(a*resolution) + Math.abs(b*resolution)) ) continue;
 
             graphNodes[x*resolution][y*resolution].neighbors.add(graphNodes[(x+a)*resolution][(y+b)*resolution]);
           }
@@ -181,8 +181,8 @@ public class BuildGraph
 
               // Experimental : (May need review once integrated with other code)
               // Raycast towards the other graph node - if there's water in the way, cancel the neighbor.
-              int distance_to_water = Raycasting.getDistanceToWaterUsingVector( x*resolution, y*resolution, (x+a)*resolution, (y+b)*resolution );
-              if( distance_to_water > (Math.abs(a*resolution) + Math.abs(b*resolution)) ) continue;
+              //int distance_to_water = Raycasting.getDistanceToWaterUsingVector( x*resolution, y*resolution, (x+a)*resolution, (y+b)*resolution );
+              //if( distance_to_water > (Math.abs(a*resolution) + Math.abs(b*resolution)) ) continue;
 
               graphNodes[x][y].neighbors.add(graphNodes[(x + a)][(y + b)]);
             }

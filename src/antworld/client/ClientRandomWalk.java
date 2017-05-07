@@ -62,11 +62,13 @@ public class ClientRandomWalk
   {
     PacketToServer packetOut = new PacketToServer(myTeam);
     exploreGraph.setAntActions( packetIn ); // Update all of the ants.
-/*
+
     for(int j = 0; j < exploreGraph.food_sites_to_broadcast; j++)
     {
-      int convoyAnts = 10;
-      if(exploreGraph.pheromone_path_generated[j] && !exploreGraph.convoy_sent[j])
+      int convoyAnts = 2;
+      if(exploreGraph.pheromone_path_generated[j]
+              && !exploreGraph.convoy_sent[j]
+              && exploreGraph.nest_to_food.get(j) != null)
       {
         exploreGraph.convoy_sent[j] = true;
         for(int k = 0; k < convoyAnts; k++)
@@ -76,7 +78,6 @@ public class ClientRandomWalk
         }
       }
     }
-*/
     for( AntData ant : packetIn.myAntList ) { packetOut.myAntList.add(ant); }
     return packetOut;
   }

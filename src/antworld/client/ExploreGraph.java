@@ -1,6 +1,7 @@
 package antworld.client;
 
 import antworld.common.*;
+import com.sun.istack.internal.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -228,13 +229,13 @@ public class ExploreGraph
 
   private boolean foodSitesFound(AntData ant, AntAction action)
   {
-    /*
+
     for(int j = 0; j < food_list.size(); j++)
     {
       if(food_to_nest.get(j) == null && !pheromone_path_generated[j])
       {
         pheromone_path_generated[j] = true;
-        System.out.println("Calling A*");
+        System.out.println("Pheromone paths being generated!!!!!!");
         path_generator.setPath(food_to_nest, j, new PathNode(food_list.get(j).gridX, food_list.get(j).gridY, 0),
                 new PathNode(nest_x, nest_y, 0));
         new Thread(path_generator).start();
@@ -243,7 +244,7 @@ public class ExploreGraph
         new Thread(path_generator).start();
       }
     }
-    */
+
     if (food_list.size() == food_sites_to_broadcast)
     {
       pheromone_paths_found = true;
@@ -263,6 +264,7 @@ public class ExploreGraph
     PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
     if(!homePath_set.get(ant.id))
     {
+      if(path.size() == 0) return false;
       GraphNode node = path.get(path.size()-1);
       path.remove(path.size()-1);
       PathNode target = A_Star.board[node.x][node.y];
@@ -273,8 +275,9 @@ public class ExploreGraph
     }
     else if(antSpot.x == targets.get(ant.id).x && antSpot.y == targets.get(ant.id).y)
     {
-      path.remove(path.size()-1);
+      if(antSpot.x == nest_x && antSpot.y == nest_y) return false;
       GraphNode node = path.get(path.size()-1);
+      path.remove(path.size()-1);
       PathNode target = A_Star.board[node.x][node.y];
       path_to_target.put(ant.id, A_Star.getPath(target, antSpot));
       targets.put(ant.id, node);
@@ -307,7 +310,7 @@ public class ExploreGraph
 
   public boolean enterNest( AntData ant, AntAction action)
   {
-    if( (Math.abs(ant.gridX-nest_x)+Math.abs(ant.gridY-nest_y) < 15) && (ant.carryUnits > 0))
+    if( (Math.abs(ant.gridX-nest_x)+Math.abs(ant.gridY-nest_y) < 15))
     {
       action.direction = null;
       action.type = AntAction.AntActionType.ENTER_NEST;
@@ -328,10 +331,7 @@ public class ExploreGraph
       action = new AntAction(AntAction.AntActionType.NOOP);
       if (ant_ids.contains(ant.id))
       {
-        if (exitNest(ant, action, data))
-        {
-          System.out.println("Antid: [" + ant.id + "] is taking action EXITNEST");
-        }
+        if(exitingNest(ant, action));
         else if (healSelf(ant, action))
         {
           System.out.printf("ant_it : [%d] is taking action HEALSELF\n", ant.id);
@@ -355,6 +355,7 @@ public class ExploreGraph
                 System.out.println("Antid: [" + ant.id + "] is taking action GOTOFOOD");
               }
               else if (foodSitesFound(ant, action)); //return explorer ant home if food sites discovered
+              else if (enteringNest(ant, action));
               else if (goExplore(ant, action))
               {
                 System.out.println("Antid: [" + ant.id + "] is taking action GOEXPLORE");
@@ -371,6 +372,31 @@ public class ExploreGraph
       }
       ant.action = action;
     }
+  }
+
+  private boolean exitingNest(AntData ant, AntAction action)
+  {
+    switch(ant.antType.ordinal())
+    {
+      case 0:
+        return false;
+      case 1:
+        if(pheromone_paths_found) return false;
+        else return exitNest(ant, action);
+      case 2:
+        return false;
+      default: return false;
+    }
+  }
+
+  private boolean enteringNest(AntData ant, AntAction action)
+  {
+    if(pheromone_paths_found)
+    {
+      System.out.println("ENTERING NEST!!!");
+      return enterNest(ant, action);
+    }
+    return false;
   }
 
   private boolean takingPathToFood(AntData ant, AntAction action)
@@ -492,41 +518,70 @@ public class ExploreGraph
     PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
     PathNode nextStep = path.get(antSpot);
 
-    if( antSpot == null)
+    try
     {
-      System.out.println("Error, the spot the ant is in is somehow invalid.");
+      if (antSpot == null)
+      {
+        System.out.println("Error, the spot the ant is in is somehow invalid.");
+        return false;
+      }
+      if (nextStep == null)
+      {
+        GraphNode target = targets.get(ant.id);
+        PathNode antSpot2 = A_Star.board[ant.gridX][ant.gridY];
+        PathNode finalSpot = A_Star.board[target.x][target.y];
+        path = A_Star.getPath(finalSpot, antSpot);
+        path_to_target.put(ant.id, path);
+        nextStep = path.get(antSpot2);
+      }
+      if ((ant.gridY - 1 == nextStep.y) && (ant.gridX == nextStep.x))
+      {
+        dir = Direction.NORTH;
+      }
+      else if ((ant.gridY - 1 == nextStep.y) && (ant.gridX + 1 == nextStep.x))
+      {
+        dir = Direction.NORTHEAST;
+      }
+      else if ((ant.gridY == nextStep.y) && (ant.gridX + 1 == nextStep.x))
+      {
+        dir = Direction.EAST;
+      }
+      else if ((ant.gridY + 1 == nextStep.y) && (ant.gridX + 1 == nextStep.x))
+      {
+        dir = Direction.SOUTHEAST;
+      }
+      else if ((ant.gridY + 1 == nextStep.y) && (ant.gridX == nextStep.x))
+      {
+        dir = Direction.SOUTH;
+      }
+      else if ((ant.gridY + 1 == nextStep.y) && (ant.gridX - 1 == nextStep.x))
+      {
+        dir = Direction.SOUTHWEST;
+      }
+      else if ((ant.gridY - 1 == nextStep.y) && (ant.gridX - 1 == nextStep.x))
+      {
+        dir = Direction.NORTHWEST;
+      }
+      else if ((ant.gridY == nextStep.y) && (ant.gridX - 1 == nextStep.x))
+      {
+        dir = Direction.WEST;
+      }
+      else
+      {
+        System.out.println("Something got messed up, A* gave me a node that's too far: " + (ant.gridX - nextStep.x) + " " + (ant.gridY - nextStep.y));
+        dir = null;
+      }
+      action.type = AntAction.AntActionType.MOVE;
+      action.direction = dir;
+      return true;
+    }
+    catch(NullPointerException e)
+    {
       return false;
     }
-    if( nextStep == null)
-    {
-      GraphNode target = targets.get(ant.id);
-      PathNode antSpot2 = A_Star.board[ant.gridX][ant.gridY];
-      PathNode finalSpot = A_Star.board[target.x][target.y];
-      path = A_Star.getPath(finalSpot, antSpot);
-      path_to_target.put(ant.id, path);
-      nextStep = path.get(antSpot2);
-    }
-
-    if((ant.gridY-1 == nextStep.y)&& (ant.gridX == nextStep.x)) { dir = Direction.NORTH; }
-    else if((ant.gridY-1 == nextStep.y)&& (ant.gridX+1 == nextStep.x)) { dir = Direction.NORTHEAST; }
-    else if((ant.gridY == nextStep.y)&& (ant.gridX+1 == nextStep.x)) { dir = Direction.EAST; }
-    else if ((ant.gridY+1 == nextStep.y)&& (ant.gridX+1 == nextStep.x)) { dir = Direction.SOUTHEAST; }
-    else if ((ant.gridY+1 == nextStep.y)&& (ant.gridX == nextStep.x)) { dir = Direction.SOUTH; }
-    else if ((ant.gridY+1 == nextStep.y)&& (ant.gridX-1 == nextStep.x)) { dir = Direction.SOUTHWEST; }
-    else if ((ant.gridY-1 == nextStep.y)&& (ant.gridX-1 == nextStep.x)) { dir = Direction.NORTHWEST; }
-    else if ((ant.gridY == nextStep.y) && (ant.gridX-1 == nextStep.x)) { dir = Direction.WEST; }
-    else
-    {
-      System.out.println("Something got messed up, A* gave me a node that's too far: " + (ant.gridX-nextStep.x) + " " + (ant.gridY-nextStep.y) );
-      dir = null;
-    }
-
-    action.type = AntAction.AntActionType.MOVE;
-    action.direction = dir;
-    return true;
   }
 
-  private boolean exitNest(AntData ant, AntAction action, PacketToClient ptc)
+  private boolean exitNest(AntData ant, AntAction action)
   {
     if (ant.state == AntAction.AntState.UNDERGROUND)
     {
