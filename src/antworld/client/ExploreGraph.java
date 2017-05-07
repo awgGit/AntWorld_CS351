@@ -20,7 +20,7 @@ public class ExploreGraph
   Map<Integer,Map<PathNode,PathNode>> path_to_target; // The *grid* (small) nodes traversed.
   Map<Integer, Boolean> homePath_set;
   Map<Integer, Boolean> foodPathTaken;
-  //Map<Integer, Boolean> homePathShortcutSet;
+  Map<Integer, Boolean> healingToFull;
   ArrayList<Integer> ant_ids;
 
   private int origin_x;
@@ -35,6 +35,7 @@ public class ExploreGraph
     path_to_target = new HashMap<>();
     foodPathTaken = new HashMap<>();
     homePath_set = new HashMap<>();
+    healingToFull = new HashMap<>();
 
 
     origin_x = nest_x;
@@ -59,7 +60,7 @@ public class ExploreGraph
     path_to_target.put( ant.id, null );
     homePath_set.put(ant.id, false);
     foodPathTaken.putIfAbsent(ant.id, false);
-    //homePathShortcutSet.putIfAbsent(ant.id, false);
+    healingToFull.putIfAbsent(ant.id, false);
   }
 
   // The logic for how to explore the graph. Probably requires some more attention.
@@ -137,7 +138,7 @@ public class ExploreGraph
               action.direction = dir;
               action.type = AntAction.AntActionType.PICKUP;
               action.quantity = ant.antType.getCarryCapacity();
-              foodPathTaken.replace(ant.id, true, false);
+              foodPathTaken.put(ant.id, false);
               return true;
             }
           }
@@ -157,7 +158,6 @@ public class ExploreGraph
     {
       for (FoodData food : ptc.foodList)
       {
-        if(food.quantity <= 2) continue;
         if (food.objType == GameObject.GameObjectType.WATER) continue;
         x_diff = Math.abs(food.gridX - ant.gridX);
         y_diff = Math.abs(food.gridY - ant.gridY);
@@ -166,7 +166,7 @@ public class ExploreGraph
         {
           if(!foodPathTaken.get(ant.id))
           {
-            foodPathTaken.replace(ant.id, false, true);
+            foodPathTaken.put(ant.id, true);
             PathNode foodSpot = A_Star.board[food.gridX][food.gridY];
             PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
             path_to_target.put(ant.id, A_Star.getPath(foodSpot, antSpot));
@@ -185,7 +185,7 @@ public class ExploreGraph
 
   private boolean goHomeIfCarrying(AntData ant, AntAction action, PacketToClient ptc)
   {
-    return  enterNest(ant,action,ptc) // Enter the nest if we're close enough to it.
+    return  enterNest(ant,action) // Enter the nest if we're close enough to it.
             || goHomeIfCarryingFood(ant,action,ptc,ant.antType.getCarryCapacity()/2); // Return if full with food.
   }
 
@@ -197,8 +197,6 @@ public class ExploreGraph
 
   private boolean goHome( AntData ant, AntAction action, PacketToClient ptc )
   {
-    //int nest_y = ptc.nestData[ptc.myNest.ordinal()].centerY;
-    //int nest_x = ptc.nestData[ptc.myNest.ordinal()].centerX;
     //PathNode nestSpot = A_Star.board[nest_x][nest_y];
     //Map<PathNode,PathNode> path = A_Star.getPath( nestSpot, antSpot, ptc, ant.id);
     Map<PathNode,PathNode> path;
@@ -208,21 +206,15 @@ public class ExploreGraph
       PathNode target = A_Star.board[targets.get(ant.id).x][targets.get(ant.id).y];
       path = A_Star.getPath(target, antSpot);
       path_to_target.put(ant.id, path);
-      homePath_set.replace(ant.id, false, true);
+      homePath_set.put(ant.id, true);
       System.out.println("Ant[" + ant.id + "]: Home Path Set!");
     }
-//    else if( (antSpot.x < nest_x + Constants.NEST_RADIUS * 2 && antSpot.y < nest_y + Constants.NEST_RADIUS * 2)
-//            && (antSpot.x > nest_x - Constants.NEST_RADIUS * 2 && antSpot.y > nest_y - Constants.NEST_RADIUS * 2) )
-//    {
-//      PathNode target = A_Star.board[nest_x][nest_y];
-//      path = A_Star.getPath(target, antSpot);
-//      path_to_target.put(ant.id, path);
-//      homePathShortcutSet.replace(ant.id, false, true);
-//    }
     else if(antSpot.x == targets.get(ant.id).x && antSpot.y == targets.get(ant.id).y)
     {
       ArrayList<GraphNode> nodes = path_taken.get(ant.id);
       nodes.remove(nodes.size()-1);
+      if(nodes.size() > 2) nodes.remove(nodes.size()-1);
+      if(nodes.size() > 1) nodes.remove(nodes.size()-1);
       GraphNode targetNode = nodes.get(nodes.size()-1);
       PathNode target = A_Star.board[targetNode.x][targetNode.y];
       path_to_target.put(ant.id, A_Star.getPath(target, antSpot));
@@ -239,10 +231,10 @@ public class ExploreGraph
     {
       if( other_ant.id == ant.id) continue; // Don't jitter with self...obviously
       // For now, don't jitter if we're too close the nest.
-//      if( Math.abs(ant.gridX-origin_x) < 20 && Math.abs(ant.gridY-origin_y) < 20 )
-//      {
-//        continue;
-//      }
+      if( Math.abs(ant.gridX-origin_x) < 20 && Math.abs(ant.gridY-origin_y) < 20 )
+      {
+        continue;
+      }
       if (Math.abs(other_ant.gridX - ant.gridX) <= 1 && Math.abs(other_ant.gridY - ant.gridY) <= 1)
       {
         // Just twist aside, rather than randomly jitter.
@@ -254,18 +246,14 @@ public class ExploreGraph
     return false;
   }
 
-  public boolean enterNest( AntData ant, AntAction action, PacketToClient ptc )
+  public boolean enterNest( AntData ant, AntAction action)
   {
-    int nestY = ptc.nestData[ptc.myNest.ordinal()].centerY;
-    int nestX = ptc.nestData[ptc.myNest.ordinal()].centerX;
-
-    if( (Math.abs(ant.gridX-nestX)+Math.abs(ant.gridY-nestY) < 15) && (ant.carryUnits > 0))
+    if( (Math.abs(ant.gridX-origin_x)+Math.abs(ant.gridY-origin_y) < 15) && (ant.carryUnits > 0))
     {
       action.direction = null;
       action.type = AntAction.AntActionType.ENTER_NEST;
       action.quantity = ant.carryUnits;
-      homePath_set.replace(ant.id, true, false);
-      //homePathShortcutSet.replace(ant.id, true, false);
+      homePath_set.put(ant.id, false);
       return true;
     }
     return false;
@@ -287,7 +275,7 @@ public class ExploreGraph
         }
         else
         {
-          if(healSelf(ant,action))
+          if(healSelf(ant,action, data))
           {
           System.out.printf("ant_it : [%d] is taking action HEALSELF\n", ant.id);
           }
@@ -295,10 +283,6 @@ public class ExploreGraph
           {
             System.out.println("Antid: [" + ant.id + "] is taking action GOHOMEIFCARRYINGORHURT");
           }
-//          else if(healSelf(ant,action))
-//          {
-//            System.out.printf("ant_it : [%d] is taking action HEALSELF\n", ant.id);
-//          }
           else if (pickUpFoodAdjacent(ant, action, data))
           {
             System.out.println("Antid: [" + ant.id + "] is taking action PICKUPFOODADJACENT");
@@ -316,22 +300,24 @@ public class ExploreGraph
             System.out.println("initiating jitterbug");
           }
         }
-
-
-
         ant.action = action;
       }
     }
   }
 
-  private boolean healSelf( AntData ant, AntAction action )
+  private boolean healSelf( AntData ant, AntAction action, PacketToClient ptc )
   {
     // Don't heal if we don't need to. (High watermark)
-    if( ant.health >= ant.antType.getMaxHealth() ) return false;
+    if( ant.health >= ant.antType.getMaxHealth() && healingToFull.get(ant.id) )
+    {
+      healingToFull.put(ant.id, false);
+      return false;
+    }
 
     // Heal if we have enough units and we're at sufficiently low health.
     if(ant.carryUnits > 0 && ant.carryType == GameObject.GameObjectType.WATER)
     {
+      if(!healingToFull.get(ant.id)) healingToFull.put(ant.id, true);
       action.type = AntAction.AntActionType.HEAL;
       action.direction = null;
       action.quantity = ant.carryUnits;
@@ -339,7 +325,7 @@ public class ExploreGraph
     }
 
     // Don't go off path to heal unless we need to. (Low watermark)
-    if( ant.health > ant.antType.getMaxHealth()/3 ) return false;
+    if( ant.health > ant.antType.getMaxHealth()/3 && !healingToFull.get(ant.id) ) return false;
 
     // Point ourselves towards water.
     action.direction = Direction.values()[ (int) (Math.floor( Raycasting.getBearingToWater(ant.gridX, ant.gridY) )/45.0) ];
@@ -351,6 +337,7 @@ public class ExploreGraph
             && Constants.random.nextBoolean() ) // So maybe move closer.
     {
       //action.direction = //Direction.getRandomDir(); // For now... I mean, it should work, but whatever.
+      int pickupAmt = ant.antType.getMaxHealth() - ant.health;
       if(ant.carryType == GameObject.GameObjectType.FOOD)
       {
         for (Direction dir : Direction.values())
@@ -365,8 +352,7 @@ public class ExploreGraph
         }
       }
       action.type = AntAction.AntActionType.PICKUP;
-      action.quantity = ant.antType.getCarryCapacity();
-
+      action.quantity = pickupAmt;
       // If we've moved off the path, then we'll need to recalculate it.
       // COM // recalculatePath( ant ); // We'll only do this once per heal. This should in theory work...
 
@@ -394,7 +380,6 @@ public class ExploreGraph
     if( nextStep == null)
     {
       GraphNode target = targets.get(ant.id);
-      //recalculatePath(ant, target);
       PathNode antSpot2 = A_Star.board[ant.gridX][ant.gridY];
       PathNode finalSpot = A_Star.board[target.x][target.y];
       path = A_Star.getPath(finalSpot, antSpot);
