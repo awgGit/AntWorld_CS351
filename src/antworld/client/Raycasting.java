@@ -79,7 +79,7 @@ public class Raycasting
       try { if ((loadedImage.getRGB((int) x, (int) y) & 0xff) == 255) { return distance; } }
       catch( Exception e )
       {
-        System.out.println(e);
+        //System.out.println(e);
         return distance;
       }
     }
@@ -125,7 +125,7 @@ public class Raycasting
         }
         catch( Exception e )
         {
-          System.out.println(e);
+          //System.out.println(e);
           ray_lengths.add( distance );
           break;
         }
