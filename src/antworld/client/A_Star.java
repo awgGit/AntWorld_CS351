@@ -99,7 +99,8 @@ public class A_Star implements Runnable
         dist = (loadedImage.getRGB(neighbor.x, neighbor.y) > loadedImage.getRGB(current.x, current.y)) ? 2 : 1;
 
         new_cost = cost_so_far.get(current) + dist;
-        if (!came_from.containsKey(neighbor) || new_cost < cost_so_far.get(neighbor))
+        // Cut off at 100: We don't want to pursue very long paths.
+        if ( (!came_from.containsKey(neighbor) || new_cost < cost_so_far.get(neighbor)) && new_cost < 100 )
         {
           cost_so_far.put(neighbor, new_cost);
           neighbor.priority = new_cost + heuristic(end_position, neighbor);
@@ -187,9 +188,9 @@ public class A_Star implements Runnable
       {
         // Cost of moving is 1, no matter the direction, unless going uphill, in which case cost is 2.
         dist = (loadedImage.getRGB(neighbor.x, neighbor.y) > loadedImage.getRGB(current.x, current.y)) ? 2 : 1;
-
         new_cost = cost_so_far.get(current) + dist;
-        if (!came_from.containsKey(neighbor) || new_cost < cost_so_far.get(neighbor))
+        // Cut off at 100: We don't want to pursue very long paths.
+        if ( (!came_from.containsKey(neighbor) || new_cost < cost_so_far.get(neighbor)) && new_cost < 100 )
         {
           cost_so_far.put(neighbor, new_cost);
           neighbor.priority = new_cost + heuristic(end_position, neighbor);

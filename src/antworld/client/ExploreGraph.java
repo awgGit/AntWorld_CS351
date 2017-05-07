@@ -256,6 +256,7 @@ public class ExploreGraph
 
   private boolean goHome( AntData ant, AntAction action)
   {
+    if(enterNest(ant,action)) return true;
     //int nest_y = ptc.nestData[ptc.myNest.ordinal()].centerY;
     //int nest_x = ptc.nestData[ptc.myNest.ordinal()].centerX;
     //PathNode nestSpot = A_Star.board[nest_x][nest_y];
