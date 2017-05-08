@@ -161,6 +161,7 @@ class ExplorerMachine
         }
         // If we can collapse further, do so. Set previous as target.
         // Todo: Right now this is only collapsing once - it'd be nice if it collapsed faster.
+        // Todo: Better yet, have it A* if a raycast check says it's directly accessible.
         else
         {
           path.remove(path.size() - 1);
