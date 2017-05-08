@@ -1,14 +1,12 @@
 package antworld.client;
 
+import antworld.common.*;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
-import antworld.common.*;
 
 /**
  * This is a very simple example client that implements the following protocol:
@@ -55,57 +53,40 @@ public class ClientRandomWalk
   private Socket clientSocket;
   //</editor-fold>
 
-  // Our exploration variables.
-  private BuildGraph buildGraph;
-  private ExploreGraph exploreGraph;
+  // Our variables
+  ExplorerMachine explorerMachine;
+  WorkerMachine workerMachine;
+  BuildGraph buildGraph;
+  PathCalculator pathCalculator;
 
-  Map<Integer, HashMap<PathNode, PathNode>> copy;
+  boolean spawned_workers = false;
 
   // Each game tick / packet sent from the server ...
   private PacketToServer chooseActionsOfAllAnts(PacketToClient packetIn)
   {
-    PacketToServer packetOut = new PacketToServer(myTeam);
-    exploreGraph.setAntActions( packetIn ); // Update all of the ants.
+    PacketToServer packetOut = new PacketToServer(myTeam); // AWG: Impersonation?
 
-    for(int j = 0; j < exploreGraph.food_sites_to_broadcast; j++)
+    for( AntData ant : packetIn.myAntList )
     {
-      int convoyAnts = 2;
-      if(exploreGraph.pheromone_path_generated[j]
-              && !exploreGraph.convoy_sent[j]
-              && exploreGraph.t1.getState() == Thread.State.TERMINATED)
-      {
-        if(exploreGraph.nest_to_food.get(j) == null)
-        {
-          exploreGraph.setNestToFoodPath(j);
-          Map<PathNode, PathNode> nest_to_food = exploreGraph.nest_to_food.get(j);
-          copy.put(j, new HashMap<>(nest_to_food));
-          Iterator it = nest_to_food.entrySet().iterator();
-          while(it.hasNext())
-          {
-            Map.Entry pair = (Map.Entry)(it.next());
-            pair.setValue(null);
-          }
-          exploreGraph.t1 = new Thread();
-          PathNode temp = A_Star.board[exploreGraph.path_generator.end_position.x][exploreGraph.path_generator.end_position.y];
-
-          exploreGraph.path_generator.end_position = A_Star.board[exploreGraph.path_generator.start_position.x][exploreGraph.path_generator.start_position.y];
-          exploreGraph.path_generator.start_position = temp;
-
-          exploreGraph.t1.start();
-        }
-        else
-        {
-          exploreGraph.setFoodToNestPath(j);
-          exploreGraph.convoy_sent[j] = true;
-          exploreGraph.nest_to_food.put(j, copy.get(j));
-          for (int k = 0; k < convoyAnts; k++)
-          {
-            AntType type = AntType.WORKER;
-            packetOut.myAntList.add(new AntData(type, myTeam));
-          }
-        }
-      }
+      if( ant.antType == AntType.EXPLORER ) explorerMachine.addAnt(ant);
+      if( ant.antType == AntType.WORKER ) workerMachine.addAnt(ant);
     }
+    explorerMachine.setAntActions( packetIn ); // Then we set all their actions
+    workerMachine.setAntActions( packetIn );
+    pathCalculator.calculatePathsWhenReady(); // Calculate the paths from nest to food and food to nest.
+
+    // Spawn some workers when we're ready for them.
+    if( !spawned_workers && PathCalculator.paths_ready )
+    {
+      for (int i=0; i<20; i++)
+      {
+        AntType type = AntType.WORKER;
+        packetOut.myAntList.add(new AntData(type, myTeam));
+      }
+      spawned_workers = true;
+    }
+
+
     for( AntData ant : packetIn.myAntList ) { packetOut.myAntList.add(ant); }
     return packetOut;
   }
@@ -149,12 +130,11 @@ public class ClientRandomWalk
     if (reconnect) packetOut.myAntList = null;
     else
     {
-      int numAnts = 10; // Was 70
+      int numAnts = 40;
       for (int i=0; i<numAnts; i++)
       {
         AntType type = AntType.EXPLORER;
-        AntData temp_antdata = new AntData(type, myTeam);
-        packetOut.myAntList.add( temp_antdata );
+        packetOut.myAntList.add(new AntData(type, myTeam));
       }
     }
     send(packetOut);
@@ -173,13 +153,15 @@ public class ClientRandomWalk
     centerY = packetIn.nestData[myNestName.ordinal()].centerY;
 
     System.out.println("ClientRandomWalk: ==== Nest Assigned ===>: " + myNestName);
-    A_Star board = new A_Star();
-    board.buildBoard();
-    //A_Star.buildBoard(); // AWG: Transform the board into interconnected graph nodes.
-    buildGraph = new BuildGraph(); // Build a more heavily discretized graph to explore.
-    exploreGraph = new ExploreGraph(board, centerX, centerY); // Explore the discretized graph using DFS & local A*.
-    for( AntData ant : packetIn.myAntList ) { exploreGraph.addAnt( ant ); } // Actually get the ants on the list so
-                                                                            // that they'll explore.
+
+    // Build the two graphs we need.
+    A_Star.buildBoard();
+    buildGraph = new BuildGraph();
+
+    explorerMachine = new ExplorerMachine( centerX, centerY );
+    workerMachine = new WorkerMachine( centerX, centerY );
+    pathCalculator = new PathCalculator( centerX, centerY );
+    //GenerateMaps.generateImage( centerX, centerY );
   }
 
   //<editor-fold desc="Strictly for communication with the server. Don't need to tinker with this.">
@@ -187,8 +169,6 @@ public class ClientRandomWalk
   {
     myTeam = team;
     System.out.println("Starting " + team +" on " + host + " reconnect = " + reconnect);
-
-    copy = new HashMap<>();
 
     isConnected = openConnection(host, reconnect);
     if (!isConnected) System.exit(0);
@@ -213,7 +193,6 @@ public class ClientRandomWalk
       }
     }
   }
-
   /**
    * Called after socket has been created.<br>
    * This simple example client runs in a single thread. <br>
@@ -260,6 +239,8 @@ public class ClientRandomWalk
         e.printStackTrace();
         System.exit(0);
       }
+
+
 
       if (myNestName == null) setupNest(packetIn);
       if (myNestName != packetIn.myNest)

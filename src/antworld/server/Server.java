@@ -1,11 +1,12 @@
 package antworld.server;
 
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.ArrayList;
 import antworld.common.Constants;
 import antworld.common.PacketToServer;
 import antworld.server.Nest.NestStatus;
+
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
 
 import static antworld.common.Constants.random;
 
@@ -21,6 +22,12 @@ public class Server extends Thread
    * loses a connection due to timeout, can reconnect within a few minutes to find
    * the ants still in the world with NOOP commands assumed during the time when
    * no client directions were received.
+   *
+   *
+   *
+   *
+   * Running server in background:
+   *
    */
   public static final double TIMEOUT_CLIENT_TO_UNDERGROUND = 60*5;
 
@@ -184,6 +191,7 @@ public class Server extends Thread
     }
 
     if (assignedNest != null) assignedNest.setClient(client, packetIn);
+
     return assignedNest;
   }
 }

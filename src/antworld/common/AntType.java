@@ -1,6 +1,7 @@
 package antworld.common;
 
 import antworld.common.AntAction.AntState;
+
 /**
  * This game supports 3 types of ants: WORKER, EXPLORER and WARRIOR.
  * Each objType of ant overrides different default capability values. For example,
@@ -51,7 +52,7 @@ public enum AntType
    * @return the probability that each ant takes 1 point of damage each time step it spends
    * outside the nest. The average damage rate is 3 points of damage per minute.
    */
-  public double getAttritionDamageProbability() {return 0.000;} // was 0.05, made it way faster.
+  public double getAttritionDamageProbability() {return 0.005;} // was 0.05, made it way faster.
 
   /**
    * This function returns the base movement speed of a non-EXPLORER ant. <br>

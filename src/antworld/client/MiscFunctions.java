@@ -8,7 +8,7 @@ import antworld.common.*;
 
 public class MiscFunctions
 {
-  public static boolean randomWalk( AntData ant, AntAction action )
+  public static boolean randomWalk(AntData ant, AntAction action )
   {
     action.direction = Direction.getRandomDir();
     action.type = AntAction.AntActionType.MOVE;
@@ -27,7 +27,7 @@ public class MiscFunctions
     }
     return false;
   }
-  public static boolean healSelf( AntData ant, AntAction action )
+  public static boolean healSelf(AntData ant, AntAction action )
   {
     System.out.println(ant.antType.getMaxHealth());
     // Don't heal if we don't need to. (High watermark)
@@ -70,6 +70,51 @@ public class MiscFunctions
       return true;
     }
   }
+
+  public static boolean enterNest(AntData ant, AntAction action, int nx, int ny )
+  {
+    if( (Math.abs(ant.gridX-nx)+Math.abs(ant.gridY-ny) < 15))
+    {
+      action.direction = null;
+      action.type = AntAction.AntActionType.ENTER_NEST;
+      action.quantity = ant.carryUnits;
+      return true;
+    }
+    return false;
+  }
+
+  public static boolean pickUpFoodAdjacent(AntData ant, AntAction action, PacketToClient data)
+  {
+    if(ant.carryUnits >= ant.antType.getCarryCapacity()) return false;
+
+    int xDiff;
+    int yDiff;
+    if(data.foodList != null)
+    {
+      for(GameObject food : data.foodList)
+      {
+        if(food.objType == GameObject.GameObjectType.WATER) continue;
+        xDiff = Math.abs(food.gridX - ant.gridX);
+        yDiff = Math.abs(food.gridY - ant.gridY);
+        if((xDiff + yDiff) <= 1 || (xDiff == 1 && yDiff == 1))
+        {
+          for(Direction dir : Direction.values())
+          {
+            if(ant.gridX + dir.deltaX() == food.gridX && ant.gridY + dir.deltaY() == food.gridY)
+            {
+              action.direction = dir;
+              action.type = AntAction.AntActionType.PICKUP;
+              action.quantity = ant.antType.getCarryCapacity();
+              System.out.println("Going to try to pick up food");
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   public static boolean exitNest(AntData ant, AntAction action, PacketToClient ptc, int nx, int ny)
   {
     if (ant.state == AntAction.AntState.UNDERGROUND)

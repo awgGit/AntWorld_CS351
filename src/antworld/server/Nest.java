@@ -1,24 +1,11 @@
 package antworld.server;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Random;
-
-import antworld.common.GameObject;
-import antworld.common.PacketToClient;
-import antworld.common.PacketToServer;
-import antworld.common.Util;
 import antworld.common.AntAction.AntActionType;
 import antworld.common.AntAction.AntState;
-import antworld.common.AntData;
-import antworld.common.AntType;
-import antworld.common.Constants;
-import antworld.common.FoodData;
-import antworld.common.NestData;
-import antworld.common.NestNameEnum;
+import antworld.common.*;
+
+import java.io.Serializable;
+import java.util.*;
 
 import static antworld.common.AntData.UNKNOWN_ANT_ID;
 
@@ -144,7 +131,7 @@ public class Nest extends NestData implements Serializable
   public void calculateScore()
   {
     if (status == NestStatus.EMPTY) score = 0;
-    score = foodInNest + antCollection.size()*AntType.SCORE_PER_ANT;
+    score = foodInNest + antCollection.size()* AntType.SCORE_PER_ANT;
   }
 
 
@@ -238,7 +225,8 @@ public class Nest extends NestData implements Serializable
       }
       else ant.action.type = AntActionType.NOOP;
 
-      //  Note: This must be done after removal of dead ants since it could cause an
+
+      //Note: This must be done after removal of dead ants since it could cause an
       //  ant to die and newly dead ants are left in the list for one tick.
       if (ant.state == AntState.OUT_AND_ABOUT)
       { if (random.nextDouble() < ant.antType.getAttritionDamageProbability()) ant.health--;

@@ -1,29 +1,19 @@
 package antworld.server;
 
+import antworld.common.AntAction.AntState;
+import antworld.common.*;
+import antworld.renderer.DataViewer;
+import antworld.renderer.Renderer;
+import antworld.server.Nest.NestStatus;
+
+import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Random;
-import javax.swing.Timer;
-import javax.swing.JFrame;
-import javax.swing.JFileChooser;
-import javax.imageio.ImageIO;
-
-import antworld.common.AntAction.AntState;
-import antworld.common.AntData;
-import antworld.common.Constants;
-import antworld.common.FoodData;
-import antworld.common.GameObject;
-import antworld.common.LandType;
-import antworld.common.NestData;
-import antworld.common.NestNameEnum;
-import antworld.common.TeamNameEnum;
-import antworld.common.Util;
-import antworld.server.Nest.NestStatus;
-import antworld.renderer.DataViewer;
-import antworld.renderer.Renderer;
 
 public class AntWorld implements ActionListener
 {
@@ -68,13 +58,16 @@ public class AntWorld implements ActionListener
     worldWidth = map.getWidth();
     worldHeight = map.getHeight();
 
+
     //smoothMap(map);
     //if (map!=null) System.exit(1);
 
     readAntWorld(map);
 
+
+
     foodSpawnList = new ArrayList<>();
-    createFoodSpawnSite(true); // AWG: Changed to false for realistic food patterns
+    createFoodSpawnSite(false);
     System.out.println("World: " + worldWidth + " x " + worldHeight);
 
     for (Nest nest : nestList)
@@ -130,7 +123,7 @@ public class AntWorld implements ActionListener
 
     if (DEBUG) System.out.println("AntWorld =====> Tick=" + gameTick + " (" + gameTime + ")");
 
-    if (random.nextDouble() < 0.005) //awg: 0.5% chance per tick
+    if (random.nextDouble() < 0.005)
     {
       int foodSiteIdx = random.nextInt(foodSpawnList.size());
       foodSpawnList.get(foodSiteIdx).spawn(this);
@@ -290,7 +283,7 @@ public class AntWorld implements ActionListener
         }
         else
         { landType = LandType.GRASS;
-          height=LandType.getMapHeight(rgb);
+          height= LandType.getMapHeight(rgb);
         }
         world[x][y] = new Cell(landType, height, x, y);
       }
@@ -345,6 +338,9 @@ public class AntWorld implements ActionListener
     if (drawPanel != null) drawPanel.drawCell(world[x][y]);
   }
 
+
+
+
   public void moveAnt(AntData ant, Cell from, Cell to)
   {
     from.setGameObject(null);
@@ -359,6 +355,7 @@ public class AntWorld implements ActionListener
     }
 
   }
+
 
   public void appendVisibleObjects(AntData myAnt, ArrayList<AntData> antList, ArrayList<FoodData> foodList)
   {
@@ -394,6 +391,11 @@ public class AntWorld implements ActionListener
       }
     }
   }
+
+
+
+
+
 
   private NestData[] buildNestDataList()
   {
@@ -438,7 +440,7 @@ public class AntWorld implements ActionListener
 
 
     int totalSitesToSpawn = 3 + random.nextInt(4);
-    if (spawnNearNests) totalSitesToSpawn = 30; // AWG: False in this build.
+    if (spawnNearNests) totalSitesToSpawn = 30;
 
     //int xRange = worldWidth/totalSitesToSpawn;
     int minDistanceToNest = 150;
@@ -450,12 +452,8 @@ public class AntWorld implements ActionListener
       int spawnX = random.nextInt(worldWidth-4)+2;
       int spawnY = random.nextInt(worldHeight-4)+2;
 
-      System.out.println("Trying to spawn new random site"); // AWG
       if (world[spawnX][spawnY].getLandType() != LandType.GRASS) continue;
-
-      System.out.println("Succeeded in spawning new random site"); // AWG
-
-      { // AWG: these braces are unnecessary...
+      {
         boolean locationOK = true;
         for (Nest nest : nestList)
         {
@@ -479,6 +477,8 @@ public class AntWorld implements ActionListener
             break;
           }
         }
+
+
 
         if (locationOK)
         { foodSpawnList.add(new FoodSpawnSite(this, spawnX, spawnY));
@@ -518,7 +518,7 @@ public class AntWorld implements ActionListener
 
       int dist = 1;
       if (i < 10)
-      { dist = Constants.random.nextInt(12)+Constants.random.nextInt(12)+1;
+      { dist = Constants.random.nextInt(12)+ Constants.random.nextInt(12)+1;
       }
 
       int count = 1;
@@ -580,7 +580,20 @@ public class AntWorld implements ActionListener
     {
       for (String field : args)
       {
-        if (field.equals("-nogui"))  showGUI = false;
+        if (field.equals("-nogui"))
+        { showGUI = false;
+          System.out.println("Running Headless....");
+          System.out.println("To keep the process running after logging out:");
+          System.out.println("   1) stop job by pressing ctrl-z");
+          System.out.println("   2) disown -h %1  (where 1 is the job number displayed in step 1)");
+          System.out.println("   3) bg 1");
+          System.out.println("   4) logout\n");
+
+          System.out.println("When you went to exit the server:");
+          System.out.println("   1) login to the machine running the server.");
+          System.out.println("   2) ps -u <username>");
+          System.out.println("   3) kill -9 <jobNumber>");
+        }
       }
     }
     new AntWorld(showGUI);

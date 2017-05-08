@@ -1,15 +1,14 @@
 package antworld.server;
 
+import antworld.common.NestNameEnum;
+import antworld.common.PacketToClient;
+import antworld.common.PacketToServer;
+import antworld.server.Nest.NestStatus;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-
-import antworld.client.AttractorField;
-import antworld.common.NestNameEnum;
-import antworld.common.PacketToServer;
-import antworld.common.PacketToClient;
-import antworld.server.Nest.NestStatus;
 
 public class CommToClient extends Thread
 {
@@ -216,7 +215,6 @@ public class CommToClient extends Thread
       }
 
       if (DEBUG) System.out.println("CommToClient.send:\n" + data);
-      AttractorField.updateField( data ); // AWG: Added for debugging exploration - updates server side copy of attractor field.
       clientWriter.writeObject(data);
       clientWriter.flush();
       clientWriter.reset();

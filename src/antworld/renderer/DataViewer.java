@@ -1,20 +1,17 @@
 package antworld.renderer;
 
 
-import java.awt.*;
-//import java.awt.Font;
-import java.util.ArrayList;
+import antworld.server.AntWorld;
+import antworld.server.Nest;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import java.awt.*;
+import java.util.ArrayList;
 
-import antworld.common.GameObject;
-import antworld.common.TeamNameEnum;
-import antworld.server.AntWorld;
-import antworld.server.Nest;
-import antworld.server.Nest.NestStatus;
+//import java.awt.Font;
 
 @SuppressWarnings("serial")
 public class DataViewer extends JFrame

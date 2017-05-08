@@ -1,10 +1,6 @@
 package antworld.server;
 
-import antworld.common.AntData;
-import antworld.common.FoodData;
-import antworld.common.GameObject;
-import antworld.common.LandType;
-import antworld.common.NestNameEnum;
+import antworld.common.*;
 import antworld.common.GameObject.GameObjectType;
 
 public class Cell 
@@ -49,6 +45,7 @@ public class Cell
 
   public int getFoodUnits()
   {
+    if (gameObject == null) return 0;
     if (gameObject.objType != GameObjectType.FOOD) return 0;
     FoodData food = (FoodData) gameObject;
     return food.quantity;
@@ -74,7 +71,7 @@ public class Cell
   }
   
   
-  public void setNest(Nest nest) 
+  public void setNest(Nest nest)
   { this.nest = nest;
     this.landType = LandType.NEST;
   }

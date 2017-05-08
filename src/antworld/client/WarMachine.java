@@ -4,6 +4,7 @@
 package antworld.client;
 
 import antworld.common.*;
+
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -102,7 +103,7 @@ public class WarMachine
   }
   //</editor-fold>
   //<editor-fold desc="Per-ant states / state transitions">
-  public boolean goExplore( AntData ant, AntAction action, PacketToClient ptc )
+  public boolean goExplore(AntData ant, AntAction action, PacketToClient ptc )
   {
     // If we're still travelling to the location, move along path.
     if( !lockdown)

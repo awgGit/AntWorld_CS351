@@ -2,6 +2,7 @@ package antworld.common;
 
 import antworld.common.AntAction.AntActionType;
 import antworld.common.AntAction.AntState;
+
 /**
  * AntData contains all data about an ant that is exchanged between
  * client and server.
@@ -138,7 +139,7 @@ public class AntData extends GameObject implements Comparable<AntData>
         + health + ", " + action;
     if (carryUnits > 0) out += ", carry: [" + carryType + ", " + carryUnits + "]";
 
-    if (state==AntState.UNDERGROUND) out += ", underground ]";
+    if (state== AntState.UNDERGROUND) out += ", underground ]";
     else out += ", x=" + gridX + ", y=" + gridY + "]";
 
     return out;

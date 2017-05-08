@@ -1,12 +1,12 @@
 package antworld.server;
 
-import java.io.Serializable;
-import java.util.Random;
-
 import antworld.common.Constants;
 import antworld.common.FoodData;
 import antworld.common.GameObject.GameObjectType;
 import antworld.common.LandType;
+
+import java.io.Serializable;
+import java.util.Random;
 
 public class FoodSpawnSite implements Serializable
 {

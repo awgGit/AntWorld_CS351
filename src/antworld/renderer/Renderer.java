@@ -1,22 +1,21 @@
 package antworld.renderer;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import javax.swing.*;
-
 import antworld.client.AttractorField;
+import antworld.common.AntAction.AntState;
 import antworld.common.AntData;
 import antworld.server.AntWorld;
 import antworld.server.Cell;
 import antworld.server.FoodSpawnSite;
 import antworld.server.Nest;
-import antworld.common.AntAction.AntState;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Renderer extends JPanel implements KeyListener, MouseListener, MouseMotionListener,
     MouseWheelListener, ComponentListener, ActionListener
@@ -73,7 +72,7 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
     addComponentListener(this);
 
     window = new JFrame(windowTitle);
-    window.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
+    window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     window.setPreferredSize(new Dimension(windowWidth, windowHeight));
     window.setFocusable(true);
     window.add(this);
@@ -296,16 +295,16 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
       }
 
       // Draw a green filter over regions we've visited.
-      for(int y = 0 ; y < 1500/AttractorField.resolution; y ++)
+      for(int y = 0; y < 1500/ AttractorField.resolution; y ++)
       {
-        for(int x = 0; x < 2500/AttractorField.resolution; x++ )
+        for(int x = 0; x < 2500/ AttractorField.resolution; x++ )
         {
           // Zero out attraction for the sea.
-          if ((world.getRGB(x*AttractorField.resolution, y*AttractorField.resolution) & 0xff) == 255) { AttractorField.pfield[x][y] = 0; }
+          if ((world.getRGB(x* AttractorField.resolution, y* AttractorField.resolution) & 0xff) == 255) { AttractorField.pfield[x][y] = 0; }
           else if(AttractorField.pfield[x][y] == 0) // If an area is explored, draw bright green..
           {
             gfx.setColor(new Color(150,255,0, 100));
-            gfx.fillRect(x*AttractorField.resolution,y*AttractorField.resolution,AttractorField.resolution,AttractorField.resolution);
+            gfx.fillRect(x* AttractorField.resolution,y* AttractorField.resolution, AttractorField.resolution, AttractorField.resolution);
           }
         }
       }
