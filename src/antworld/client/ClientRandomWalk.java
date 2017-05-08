@@ -68,9 +68,10 @@ public class ClientRandomWalk
       int convoyAnts = 2;
       if(exploreGraph.pheromone_path_generated[j]
               && !exploreGraph.convoy_sent[j]
-              && exploreGraph.nest_to_food.get(j) != null)
+              && exploreGraph.t1.getState() == Thread.State.TERMINATED)
       {
-        exploreGraph.convoy_sent[j] = true;
+       exploreGraph.setNestToFoodPath(j);
+       exploreGraph.convoy_sent[j] = true;
         for(int k = 0; k < convoyAnts; k++)
         {
           AntType type = AntType.WORKER;

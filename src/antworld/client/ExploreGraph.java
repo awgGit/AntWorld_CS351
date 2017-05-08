@@ -66,6 +66,8 @@ public class ExploreGraph
 
     this.nest_x = nest_x;
     this.nest_y = nest_y;
+    t1 = new Thread(path_generator);
+    t2 = new Thread(path_generator);
   }
 
   // Add an ant to the exploration process : requires that the ant be *on* a node when added.
@@ -78,7 +80,7 @@ public class ExploreGraph
     }
     ant_ids.add( ant.id );
     path_taken.put( ant.id, new ArrayList<>() );
-    System.out.println("THIS IS THE NEW ANT BEING ADDED: "+ant.antType);
+
     ArrayList<GraphNode> path = new ArrayList<>();
     path.add(BuildGraph.graphNodes[ant.gridX][ant.gridY]);
     path_taken.put( ant.id, path );
@@ -177,7 +179,7 @@ public class ExploreGraph
 
   private boolean goToFood(AntData ant, AntAction action, PacketToClient ptc)
   {
-    if( pheromone_paths_found) return false;
+    if( pheromone_paths_found && ant.antType == AntType.EXPLORER) return false;
     int x_diff;
     int y_diff;
     int distance;
@@ -232,24 +234,20 @@ public class ExploreGraph
   {
     for(int j = 0; j < food_list.size(); j++)
     {
-      if(food_to_nest.get(j) == null && !pheromone_path_generated[j])
+      if(!pheromone_path_generated[j])
       {
-        //t1 = new Thread(path_generator);
-       // t2 = new Thread(path_generator);
         pheromone_path_generated[j] = true;
-        System.out.println("Pheromone paths being generated!!!!!!");
-//        path_generator.setNodes(new PathNode(food_list.get(j).gridX, food_list.get(j).gridY, 0),
-//                new PathNode(nest_x, nest_y, 0));
-
         path_generator.setNodes(
                 A_Star.board[ food_list.get(j).gridX ][ food_list.get(j).gridY ],
                 A_Star.board[ nest_x ][ nest_y ] );
-
-
-        new Thread(path_generator).start();
-        //path_generator.setPath(nest_to_food, j, new PathNode(nest_x, nest_y, 0),
-        //        new PathNode(food_list.get(j).gridX, food_list.get(j).gridY, 0));
-        //t2.start();
+        t1.start();
+        /*
+        path_generator.setNodes(
+                A_Star.board[nest_x][nest_y],
+                A_Star.board[ food_list.get(j).gridX ][ food_list.get(j).gridY ]
+        );
+        t2.start();
+        */
       }
     }
 
@@ -264,6 +262,7 @@ public class ExploreGraph
 
   private boolean goHome( AntData ant, AntAction action)
   {
+    if( enterNest(ant,action) ) return true;
     //int nest_y = ptc.nestData[ptc.myNest.ordinal()].centerY;
     //int nest_x = ptc.nestData[ptc.myNest.ordinal()].centerX;
     //PathNode nestSpot = A_Star.board[nest_x][nest_y];
@@ -333,21 +332,16 @@ public class ExploreGraph
   //<editor-fold desc="Implementation details">
   public void setAntActions( PacketToClient data )
   {
-
     AntAction action;
     for (AntData ant : data.myAntList)
     {
-
       if(!ant_ids.contains(ant.id) && ant.antType == AntType.WORKER)
       {
         addAnt(ant);
       }
-
-
       action = new AntAction(AntAction.AntActionType.NOOP);
       if (ant_ids.contains(ant.id))
       {
-
         if(exitingNest(ant, action));
         else if (healSelf(ant, action))
         {
@@ -359,16 +353,10 @@ public class ExploreGraph
           {
             case 0:
             {
-              System.out.println("THIS IS A WORKER ANT!");
-              if(exitNest(ant,action))
-              {
-                System.out.println("Antid: [" + ant.id + "] THIS WORKER IS LEAVING THE NEST!");
-
-              }
-              if (takingPathToFood(ant, action))
-              {
-                System.out.println("Antid: [" + ant.id + "] is a worker ant taking action GOING TO FOOD");
-              }
+              //if(pickUpFoodAdjacent(ant, action, data));
+              //else if(goToFood(ant, action, data));
+              if (takingPathToFood(ant, action));
+              //else if (goExplore(ant, action));
             }
             break;
             case 1:
@@ -435,15 +423,34 @@ public class ExploreGraph
 
   public boolean takePathToFood(AntData ant, AntAction action)
   {
-    PathNode antSpot = new PathNode(ant.gridX, ant.gridY, 0);
+    PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
     Map<PathNode,PathNode> path;
+    /*
     if(ant.gridX != nest_x && ant.gridY != nest_y)
     {
-      path = A_Star.getPath(new PathNode(nest_x, nest_y, 0), antSpot);
+      path = A_Star.getPath(A_Star.board[nest_x][nest_y], antSpot);
       path_to_target.put(ant.id, path);
       return moveAlongPath(ant, action, path_to_target.get(ant.id));
     }
-    return moveAlongPath(ant,action, nest_to_food.get(ant.id));
+    */
+
+    {
+      path_to_target.put(ant.id, nest_to_food.get(0));
+      return moveAlongPath(ant, action, nest_to_food.get(0));
+    }
+  }
+
+  public boolean takePathToPhermoneTrail(AntData ant, AntAction action)
+  {
+    PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
+    Map<PathNode,PathNode> path;
+    if(ant.gridX != nest_x && ant.gridY != nest_y)
+    {
+      path = A_Star.getPath(A_Star.board[nest_x][nest_y], antSpot);
+      path_to_target.put(ant.id, path);
+      return moveAlongPath(ant, action, path_to_target.get(ant.id));
+    }
+    return moveAlongPath(ant, action, nest_to_food.get(ant.id));
   }
 
   private void foodSitePresent(PacketToClient ptc)
@@ -457,8 +464,8 @@ public class ExploreGraph
       {
         food_list.add(new FoodData(
                 GameObject.GameObjectType.FOOD,
-                food.gridX - rand.nextInt(30),
-                food.gridY - rand.nextInt(30),
+                ((food.gridX - rand.nextInt(30))/BuildGraph.resolution)*BuildGraph.resolution,
+                ((food.gridY - rand.nextInt(30))/BuildGraph.resolution)*BuildGraph.resolution,
                 0
         ));
       }
@@ -471,8 +478,8 @@ public class ExploreGraph
           {
             food_list.add(new FoodData(
                     GameObject.GameObjectType.FOOD,
-                    food.gridX - rand.nextInt(30),
-                    food.gridY - rand.nextInt(30),
+                    ((food.gridX - rand.nextInt(30))/BuildGraph.resolution)*BuildGraph.resolution,
+                    ((food.gridY - rand.nextInt(30))/BuildGraph.resolution)*BuildGraph.resolution,
                     0
             ));
           }
@@ -657,6 +664,15 @@ public class ExploreGraph
       }
     }
     return false;
+  }
+
+  public void setNestToFoodPath(int index)
+  {
+    nest_to_food.put(index,path_generator.path);
+  }
+  public void setFoodToNestPath(int index)
+  {
+    food_to_nest.put(index,path_generator.path);
   }
 
   //</editor-fold>

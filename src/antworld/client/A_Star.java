@@ -43,6 +43,7 @@ public class A_Star implements Runnable
     System.out.println("Path size : " + path.size());
     this.path = path;
   }
+
   @Override
   public void run()
   {
