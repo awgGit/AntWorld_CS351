@@ -25,6 +25,7 @@ public class MiscFunctions
         return true;
       }
     }
+
     return false;
   }
   public static boolean healSelf(AntData ant, AntAction action )
@@ -64,11 +65,25 @@ public class MiscFunctions
 
       return true;
     }
+    else if(Raycasting.getDistanceToWaterUsingVector(ant.gridX, ant.gridY, ant.gridX+action.direction.deltaX(), ant.gridY+action.direction.deltaY()) <= 1 && ant.carryType == GameObject.GameObjectType.FOOD)
+    {
+      for(Direction dir : Direction.values())
+      {
+        if(A_Star.board[ant.gridX + dir.deltaX()][ant.gridY + dir.deltaY()] !=null)
+        {
+          action.direction = dir;
+          action.type = AntAction.AntActionType.DROP;
+          action.quantity = ant.carryUnits;
+          return true;
+        }
+        }
+    }
     else // If we aren't adjacent, then keep moving to the water.
     {
       action.type = AntAction.AntActionType.MOVE;
       return true;
     }
+    return false;
   }
 
   public static boolean enterNest(AntData ant, AntAction action, int nx, int ny )

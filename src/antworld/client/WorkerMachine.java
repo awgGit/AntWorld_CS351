@@ -94,6 +94,7 @@ class WorkerMachine
           {
             if( MiscFunctions.attack( ant, action, ptc));
             else if( MiscFunctions.healSelf( ant, action ));
+            else if(MiscFunctions.pickUpFoodAdjacent(ant,action,ptc));
             else if (moveNestToFood( ant, action ));
             if( MiscFunctions.jitter( ant, action, ptc ));
           }
@@ -111,7 +112,8 @@ class WorkerMachine
   private boolean moveFoodToNest(AntData ant, AntAction action )
   {
     // If we're moving from food to nest, move our target node along appropriately.
-    if(ant.gridX == target_PathNodes.get(ant.id).x && ant.gridY == target_PathNodes.get(ant.id).y ){
+    if(ant.gridX == target_PathNodes.get(ant.id).x && ant.gridY == target_PathNodes.get(ant.id).y )
+    {
       target_PathNodes.put( ant.id, PathCalculator.nest_to_food.get(target_PathNodes.get(ant.id))); }
 
     // If the target is null, we've hit the end of the path.
