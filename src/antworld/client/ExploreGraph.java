@@ -1,7 +1,6 @@
 package antworld.client;
 
 import antworld.common.*;
-import com.sun.istack.internal.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,7 +76,7 @@ public class ExploreGraph
     }
     ant_ids.add( ant.id );
     path_taken.put( ant.id, new ArrayList<>() );
-
+    System.out.println("THIS IS THE NEW ANT BEING ADDED: "+ant.antType);
     ArrayList<GraphNode> path = new ArrayList<>();
     path.add(BuildGraph.graphNodes[ant.gridX][ant.gridY]);
     path_taken.put( ant.id, path );
@@ -326,12 +325,21 @@ public class ExploreGraph
   //<editor-fold desc="Implementation details">
   public void setAntActions( PacketToClient data )
   {
+
     AntAction action;
     for (AntData ant : data.myAntList)
     {
+
+      if(!ant_ids.contains(ant.id) && ant.antType == AntType.WORKER)
+      {
+        addAnt(ant);
+      }
+
+
       action = new AntAction(AntAction.AntActionType.NOOP);
       if (ant_ids.contains(ant.id))
       {
+
         if(exitingNest(ant, action));
         else if (healSelf(ant, action))
         {
@@ -343,6 +351,12 @@ public class ExploreGraph
           {
             case 0:
             {
+              System.out.println("THIS IS A WORKER ANT!");
+              if(exitNest(ant,action))
+              {
+                System.out.println("Antid: [" + ant.id + "] THIS WORKER IS LEAVING THE NEST!");
+
+              }
               if (takingPathToFood(ant, action))
               {
                 System.out.println("Antid: [" + ant.id + "] is a worker ant taking action GOING TO FOOD");
@@ -380,6 +394,12 @@ public class ExploreGraph
     switch(ant.antType.ordinal())
     {
       case 0:
+        System.out.println("I AM A WORKER ANT!");
+        if (ant.antType ==AntType.WORKER )
+        {
+          return exitNest(ant, action);
+        }
+
         return false;
       case 1:
         if(pheromone_paths_found) return false;
