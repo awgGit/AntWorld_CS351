@@ -234,13 +234,15 @@ public class ExploreGraph
   {
     for(int j = 0; j < food_list.size(); j++)
     {
-      if(!pheromone_path_generated[j])
+      try
       {
-        pheromone_path_generated[j] = true;
-        path_generator.setNodes(
-                A_Star.board[ food_list.get(j).gridX ][ food_list.get(j).gridY ],
-                A_Star.board[ nest_x ][ nest_y ] );
-        t1.start();
+        if (!pheromone_path_generated[j])
+        {
+          pheromone_path_generated[j] = true;
+          path_generator.setNodes(
+                  A_Star.board[food_list.get(j).gridX][food_list.get(j).gridY], // Food
+                  A_Star.board[nest_x][nest_y]); // Nest
+          t1.start();
         /*
         path_generator.setNodes(
                 A_Star.board[nest_x][nest_y],
@@ -248,6 +250,11 @@ public class ExploreGraph
         );
         t2.start();
         */
+        }
+      }
+      catch( Exception e )
+      {
+        System.out.println("There was an error, but we caught it.");
       }
     }
 
@@ -300,10 +307,12 @@ public class ExploreGraph
     {
       if( other_ant.id == ant.id) continue; // Don't jitter with self...obviously
       // For now, don't jitter if we're too close the nest.
-      if( Math.abs(ant.gridX-nest_x) < 20 && Math.abs(ant.gridY-nest_y) < 20 )
-      {
-        continue;
-      }
+
+      // AWG: Knocked out line to jitter all the time every time
+//      if( Math.abs(ant.gridX-nest_x) < 20 && Math.abs(ant.gridY-nest_y) < 20 )
+//      {
+//        continue;
+//      }
       if (Math.abs(other_ant.gridX - ant.gridX) <= 1 && Math.abs(other_ant.gridY - ant.gridY) <= 1)
       {
         // Just twist aside, rather than randomly jitter.
@@ -418,11 +427,14 @@ public class ExploreGraph
 
   private boolean takingPathToFood(AntData ant, AntAction action)
   {
+    if( nest_to_food.get(0).get( A_Star.board[ant.gridX][ant.gridY]) == null ){ return false; }
+    System.out.println("going to try to take the path to food: ant position is:  " + ant.gridX + " " + ant.gridY );
     return takePathToFood(ant, action) && ant.carryUnits < ant.antType.getCarryCapacity()/2;
   }
 
   public boolean takePathToFood(AntData ant, AntAction action)
   {
+    //<editor-fold desc="for nonnest calls">
     PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
     Map<PathNode,PathNode> path;
     /*
@@ -433,9 +445,10 @@ public class ExploreGraph
       return moveAlongPath(ant, action, path_to_target.get(ant.id));
     }
     */
+    //</editor-fold>
 
     {
-      path_to_target.put(ant.id, nest_to_food.get(0));
+      path_to_target.put(ant.id, nest_to_food.get(0)); // AWG: Here's where we modify the path that the worker is going to take.
       return moveAlongPath(ant, action, nest_to_food.get(0));
     }
   }
@@ -563,6 +576,7 @@ public class ExploreGraph
       }
       if (nextStep == null)
       {
+        System.out.println("Recalculating A* b/c nextStep was null...");
         GraphNode target = targets.get(ant.id);
         PathNode antSpot2 = A_Star.board[ant.gridX][ant.gridY];
         PathNode finalSpot = A_Star.board[target.x][target.y];
@@ -668,6 +682,7 @@ public class ExploreGraph
 
   public void setNestToFoodPath(int index)
   {
+    //AWG: Presumably, this path is getting the same start and end nodes, somehow.
     nest_to_food.put(index,path_generator.path);
   }
   public void setFoodToNestPath(int index)

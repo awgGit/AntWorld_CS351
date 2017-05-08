@@ -34,8 +34,8 @@ public class A_Star implements Runnable
 
   public void setNodes(PathNode p1, PathNode p2)
   {
-    start_position = p1;
-    end_position = p2;
+    start_position = p2; // Nest
+    end_position = p1; // Food
   }
 
   public void setPath(Map<PathNode, PathNode> path)
@@ -47,8 +47,9 @@ public class A_Star implements Runnable
   @Override
   public void run()
   {
-    System.out.println("Setting Path to Food1");
-    setPath(getPath(end_position, start_position));
+    System.out.println("Setting Path to Food1:");
+    System.out.printf("end: %s start: %s\n", end_position, start_position);
+    setPath(getPath(end_position, start_position)); // Food, Nest
   }
   // AWG: I needed a simple getPath without the ant stuff still. Same idea as the other one but with fewer args, overload
   public static Map<PathNode,PathNode> getPath(PathNode start_position, PathNode end_position)
