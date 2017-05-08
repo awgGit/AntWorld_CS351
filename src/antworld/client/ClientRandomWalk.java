@@ -6,6 +6,8 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
 import antworld.common.*;
 
 /**
@@ -57,6 +59,7 @@ public class ClientRandomWalk
   private BuildGraph buildGraph;
   private ExploreGraph exploreGraph;
 
+  Map<Integer, HashMap<PathNode, PathNode>> copy;
 
   // Each game tick / packet sent from the server ...
   private PacketToServer chooseActionsOfAllAnts(PacketToClient packetIn)
@@ -74,13 +77,24 @@ public class ClientRandomWalk
         if(exploreGraph.nest_to_food.get(j) == null)
         {
           exploreGraph.setNestToFoodPath(j);
+          Map<PathNode, PathNode> nest_to_food = exploreGraph.nest_to_food.get(j);
+          copy.put(j, new HashMap<>(nest_to_food));
+          Iterator it = nest_to_food.entrySet().iterator();
+          while(it.hasNext())
+          {
+            Map.Entry pair = (Map.Entry)(it.next());
+            pair.setValue(null);
+          }
           exploreGraph.t1 = new Thread();
+          exploreGraph.path_generator.start_position = exploreGraph.path_generator.end_position;
+          exploreGraph.path_generator.end_position = exploreGraph.path_generator.start_position;
           exploreGraph.t1.start();
         }
         else
         {
           exploreGraph.setFoodToNestPath(j);
           exploreGraph.convoy_sent[j] = true;
+          exploreGraph.nest_to_food.put(j, copy.get(j));
           for (int k = 0; k < convoyAnts; k++)
           {
             AntType type = AntType.WORKER;
@@ -170,6 +184,8 @@ public class ClientRandomWalk
   {
     myTeam = team;
     System.out.println("Starting " + team +" on " + host + " reconnect = " + reconnect);
+
+    copy = new HashMap<>();
 
     isConnected = openConnection(host, reconnect);
     if (!isConnected) System.exit(0);
