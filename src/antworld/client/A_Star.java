@@ -15,11 +15,12 @@ public class A_Star implements Runnable
   public static PathNode[][] board = new PathNode[2500][1500];
   public static PathNode[][] nonTouchedBoard = new PathNode[2500][1500];
   public PathNode start_position, end_position;
-  public Map<PathNode, PathNode> path, nest_to_food, food_to_nest;
+  public Map<PathNode, PathNode> path;
   private static BufferedImage loadedImage;
 
   public A_Star()
   {
+    path = new HashMap<>();
     try
     {
       URL fileURL = Util.class.getClassLoader().getResource("resources/AntWorld.png");
@@ -31,19 +32,22 @@ public class A_Star implements Runnable
     }
   }
 
-  public void setPath(Map<Integer, Map<PathNode, PathNode>> relativePath, int key, PathNode p1, PathNode p2)
+  public void setNodes(PathNode p1, PathNode p2)
   {
     start_position = p1;
     end_position = p2;
-    relativePath.put(key, path);
   }
 
+  public void setPath(Map<PathNode, PathNode> path)
+  {
+    System.out.println("Path size : " + path.size());
+    this.path = path;
+  }
   @Override
   public void run()
   {
-
-    path = getPath(end_position, start_position);
-
+    System.out.println("Setting Path to Food1");
+    setPath(getPath(end_position, start_position));
   }
   // AWG: I needed a simple getPath without the ant stuff still. Same idea as the other one but with fewer args, overload
   public static Map<PathNode,PathNode> getPath(PathNode start_position, PathNode end_position)
@@ -99,8 +103,7 @@ public class A_Star implements Runnable
         dist = (loadedImage.getRGB(neighbor.x, neighbor.y) > loadedImage.getRGB(current.x, current.y)) ? 2 : 1;
 
         new_cost = cost_so_far.get(current) + dist;
-        // Cut off at 100: We don't want to pursue very long paths.
-        if ( (!came_from.containsKey(neighbor) || new_cost < cost_so_far.get(neighbor)) && new_cost < 100 )
+        if (!came_from.containsKey(neighbor) || new_cost < cost_so_far.get(neighbor))
         {
           cost_so_far.put(neighbor, new_cost);
           neighbor.priority = new_cost + heuristic(end_position, neighbor);
@@ -188,9 +191,9 @@ public class A_Star implements Runnable
       {
         // Cost of moving is 1, no matter the direction, unless going uphill, in which case cost is 2.
         dist = (loadedImage.getRGB(neighbor.x, neighbor.y) > loadedImage.getRGB(current.x, current.y)) ? 2 : 1;
+
         new_cost = cost_so_far.get(current) + dist;
-        // Cut off at 100: We don't want to pursue very long paths.
-        if ( (!came_from.containsKey(neighbor) || new_cost < cost_so_far.get(neighbor)) && new_cost < 100 )
+        if (!came_from.containsKey(neighbor) || new_cost < cost_so_far.get(neighbor))
         {
           cost_so_far.put(neighbor, new_cost);
           neighbor.priority = new_cost + heuristic(end_position, neighbor);

@@ -39,6 +39,8 @@ public class ExploreGraph
   int nest_x, nest_y;
   int food_sites_to_broadcast = 1;
 
+  Thread t1, t2;
+
   // Initialize the maps & lists.
   public ExploreGraph(A_Star path_tool, int nest_x, int nest_y)
   {
@@ -229,19 +231,26 @@ public class ExploreGraph
 
   private boolean foodSitesFound(AntData ant, AntAction action)
   {
-
     for(int j = 0; j < food_list.size(); j++)
     {
       if(food_to_nest.get(j) == null && !pheromone_path_generated[j])
       {
+        //t1 = new Thread(path_generator);
+       // t2 = new Thread(path_generator);
         pheromone_path_generated[j] = true;
         System.out.println("Pheromone paths being generated!!!!!!");
-        path_generator.setPath(food_to_nest, j, new PathNode(food_list.get(j).gridX, food_list.get(j).gridY, 0),
-                new PathNode(nest_x, nest_y, 0));
+//        path_generator.setNodes(new PathNode(food_list.get(j).gridX, food_list.get(j).gridY, 0),
+//                new PathNode(nest_x, nest_y, 0));
+
+        path_generator.setNodes(
+                A_Star.board[ food_list.get(j).gridX ][ food_list.get(j).gridY ],
+                A_Star.board[ nest_x ][ nest_y ] );
+
+
         new Thread(path_generator).start();
-        path_generator.setPath(nest_to_food, j, new PathNode(nest_x, nest_y, 0),
-                new PathNode(food_list.get(j).gridX, food_list.get(j).gridY, 0));
-        new Thread(path_generator).start();
+        //path_generator.setPath(nest_to_food, j, new PathNode(nest_x, nest_y, 0),
+        //        new PathNode(food_list.get(j).gridX, food_list.get(j).gridY, 0));
+        //t2.start();
       }
     }
 
@@ -256,7 +265,6 @@ public class ExploreGraph
 
   private boolean goHome( AntData ant, AntAction action)
   {
-    if(enterNest(ant,action)) return true;
     //int nest_y = ptc.nestData[ptc.myNest.ordinal()].centerY;
     //int nest_x = ptc.nestData[ptc.myNest.ordinal()].centerX;
     //PathNode nestSpot = A_Star.board[nest_x][nest_y];
