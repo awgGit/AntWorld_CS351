@@ -165,9 +165,12 @@ public class A_Star implements Runnable
       }
     }
 */
-    for(int j = 0; j < ptc.foodList.size(); j++)
+    if( ptc.foodList != null )
     {
-      board[ptc.foodList.get(j).gridX][ptc.foodList.get(j).gridY] = null;
+      for (int j = 0; j < ptc.foodList.size(); j++)
+      {
+        board[ptc.foodList.get(j).gridX][ptc.foodList.get(j).gridY] = null;
+      }
     }
 
     while( !frontier.isEmpty() )
@@ -223,12 +226,16 @@ public class A_Star implements Runnable
       }
     }
     */
-    for(int j = 0; j < ptc.foodList.size(); j++)
+    if( ptc.foodList != null)
     {
-      board[ptc.foodList.get(j).gridX][ptc.foodList.get(j).gridY] =
-              new PathNode(ptc.foodList.get(j).gridX, ptc.foodList.get(j).gridY, 0);
+      for (int j = 0; j < ptc.foodList.size(); j++)
+      {
+        board[ptc.foodList.get(j).gridX][ptc.foodList.get(j).gridY] =
+                new PathNode(ptc.foodList.get(j).gridX, ptc.foodList.get(j).gridY, 0);
+      }
     }
     return came_from;
+
   }
 
   // In general, we can assume manhattan distance is ideal.

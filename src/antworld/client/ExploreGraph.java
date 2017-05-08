@@ -410,6 +410,8 @@ public class ExploreGraph
                 else if(moveAlongPath(ant,action, path_to_food));
                 else System.out.println("Not able to move along path, for some reason.");
               }
+
+
               if( phases.get(ant.id ) == 1 )
               {
                 if(pickUpFoodAdjacent( ant, action, data ));
@@ -417,6 +419,9 @@ public class ExploreGraph
                 else if (MiscFunctions.randomWalk( ant, action ));
                 if(ant.carryUnits > 0 ) phases.put(ant.id,2); // NEXT phase, if we have food.
               }
+
+
+
               if( phases.get(ant.id ) == 2 )
               {
                 // Still need FOOD_NODE.
