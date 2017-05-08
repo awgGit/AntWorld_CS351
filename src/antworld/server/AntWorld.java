@@ -410,15 +410,15 @@ public class AntWorld implements ActionListener
 
   private void createFoodSpawnSite(boolean spawnNearNests)
   {
-    if (spawnNearNests)
+    if (true) // spawnNearNests
     {
       for (Nest nest : nestList)
       {
-        int x0 = nest.centerX + 25;
-        int y0 = nest.centerY + 25;
+        int x0 = nest.centerX + 70;
+        int y0 = nest.centerY + 70;
 
-        int x1 = nest.centerX - 25;
-        int y1 = nest.centerY - 25;
+        int x1 = nest.centerX - 70;
+        int y1 = nest.centerY - 70;
 
         if (world[x0][y0].getLandType() == LandType.GRASS)
         {

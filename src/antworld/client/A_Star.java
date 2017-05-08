@@ -31,8 +31,9 @@ public class A_Star
   }
 
   // AWG: I needed a simple getPath without the ant stuff still. Same idea as the other one but with fewer args, overload
-  public static Map<PathNode,PathNode> getPath(PathNode start_position, PathNode end_position)
+  public static Map<PathNode,PathNode> getPath(PathNode start_position, PathNode end_position )
   {
+
     System.out.println("Called A*");
     if( start_position == null)
     {

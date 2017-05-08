@@ -71,9 +71,21 @@ public class ClientRandomWalk
       if( ant.antType == AntType.WORKER ) workerMachine.addAnt(ant);
       if( !MiscFunctions.healToFull.containsKey(ant.id)) MiscFunctions.healToFull.put(ant.id, false);
     }
+    FoodPiles.cullPiles(); // Remove food piles which have no food left.
     pathCalculator.calculatePathsWhenReady(); // Calculate food-nest paths when able.
     explorerMachine.setAntActions( packetIn ); // Set actions for the explorers.
     workerMachine.setAntActions( packetIn );  // Set actions for the workers.
+
+    if (spawned_workers)
+    {
+      int count = 0;
+      for( AntData a : packetIn.myAntList ) { if( a.antType == AntType.WORKER ) count++; }
+      if(count < 20)
+      {
+        AntType type = AntType.WORKER;
+        packetOut.myAntList.add(new AntData(type, myTeam));
+      }
+    }
 
     // Spawn some workers when we're ready for them.
     if( !spawned_workers && PathCalculator.paths_ready )
@@ -85,6 +97,7 @@ public class ClientRandomWalk
       }
       spawned_workers = true;
     }
+
 
 
     for( AntData ant : packetIn.myAntList ) { packetOut.myAntList.add(ant); }

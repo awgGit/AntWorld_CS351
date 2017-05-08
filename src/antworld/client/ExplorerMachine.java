@@ -100,6 +100,7 @@ class ExplorerMachine
       {
           if( MiscFunctions.enterNest( ant, action, nest_x, nest_y ));
           else if( MiscFunctions.healSelf( ant, action ));
+          else if ( attemptBeeline(ant, action));
           else if ( exploreGraph( ant, action ));
           if( MiscFunctions.jitter( ant, action, ptc ));
       }
@@ -115,6 +116,17 @@ class ExplorerMachine
       }
       ant.action = action; // This line is necessary.
     }
+  }
+
+  private boolean attemptBeeline( AntData ant, AntAction action )
+  {
+    int distance_to_nest = Math.abs( ant.gridX - nest_x ) + Math.abs( ant.gridY - nest_y );
+    int raycast_distance = Raycasting.getDistanceToWaterUsingVector( ant.gridX, ant.gridY, nest_x, nest_y );
+    if( distance_to_nest <= raycast_distance && distance_to_nest <= 200 )
+    {
+      return moveAlongPath(ant, action, A_Star.getPath( A_Star.board[ nest_x ][ nest_y ], A_Star.board[ ant.gridX ][ ant.gridY ]));
+    }
+    return false;
   }
 
   // Go from where we are to our target node.
@@ -199,12 +211,13 @@ class ExplorerMachine
   // Ascertain whether or not all *explorer* ants are underground.
   private boolean checkIfAllUnderground( PacketToClient ptc )
   {
+    int count = 0;
     for( AntData ant : ptc.myAntList )
     {
       if( !ant_ids.contains(ant.id) ) continue;
-      if( ant.state != AntAction.AntState.UNDERGROUND ) return false;
+      if( ant.state != AntAction.AntState.UNDERGROUND ) count++;
     }
-    return true;
+    return count < 3;
   }
 
   // Provides the nest step from one's current position using an A* hashmap.
