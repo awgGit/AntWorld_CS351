@@ -104,9 +104,9 @@ class WorkerMachine
           else if( MiscFunctions.pickUpFoodAdjacent( ant, action, ptc ))
           {
             // (Needed for goToFood, so we know when to recalculate the path)
-            foodPathTaken.put(ant.id, false);
+            //foodPathTaken.put(ant.id, false);
           }
-          else if( goToFood( ant, action, ptc )); // Experimental.
+          //else if( goToFood( ant, action, ptc )); // Experimental.
           //else if( goToFoodPiles( ant, action )); // Experimental, not working atm.
           else if (MiscFunctions.randomWalk( ant, action ));
           if( ant.carryUnits > 0 )
@@ -140,42 +140,7 @@ class WorkerMachine
     }
   }
 
-  private boolean goToFood(AntData ant, AntAction action, PacketToClient ptc)
-  {
-    int x_diff;
-    int y_diff;
-    int distance;
-    if( ptc.foodList != null)
-    {
-      for (FoodData food : ptc.foodList)
-      {
-        if(food.quantity <= 2) continue;
-        if (food.objType == GameObject.GameObjectType.WATER) continue;
-        x_diff = Math.abs(food.gridX - ant.gridX);
-        y_diff = Math.abs(food.gridY - ant.gridY);
-        distance = x_diff + y_diff;
-        if(distance < ant.antType.getVisionRadius()*2)
-        {
-          if(!foodPathTaken.get(ant.id))
-          {
-            foodPathTaken.put(ant.id, true);
-            PathNode foodSpot = A_Star.board[food.gridX][food.gridY];
-            PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
-            path_to_target.put(ant.id, A_Star.getPath(foodSpot, antSpot));
-            moveAlongPath(ant, action, path_to_target.get(ant.id));
-          }
-          else
-          {
-            moveAlongPath(ant, action, path_to_target.get(ant.id));
-          }
 
-          System.out.println("Trying to go to food");
-          return true;
-        }
-      }
-    }
-    return false;
-  }
 
 
   // For now, all ants will try to go to the first food pile (rather than distribute).

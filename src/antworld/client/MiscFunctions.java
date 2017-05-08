@@ -17,6 +17,7 @@ public class MiscFunctions
     action.type = AntAction.AntActionType.MOVE;
     return true;
   }
+
   public static boolean jitter(AntData ant, AntAction action, PacketToClient ptc )
   {
     for (AntData other_ant : ptc.myAntList)
@@ -27,10 +28,23 @@ public class MiscFunctions
         action.direction = Direction.getRandomDir();
         return true;
       }
-    }
+      if(ptc.foodList != null)
+      {
+        if(ant.carryUnits < ant.antType.getCarryCapacity()) return false;
+        for(FoodData food : ptc.foodList)
+        {
 
+          if (Math.abs(food.gridX - ant.gridX) <= 1 && Math.abs(food.gridY - ant.gridY) <= 1)
+          {
+            action.direction = Direction.getRandomDir();
+            return true;
+          }
+        }
+      }
+    }
     return false;
   }
+
   public static boolean healSelf(AntData ant, AntAction action )
   {
     System.out.println(ant.antType.getMaxHealth());
