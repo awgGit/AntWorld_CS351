@@ -86,8 +86,11 @@ public class ClientRandomWalk
             pair.setValue(null);
           }
           exploreGraph.t1 = new Thread();
-          exploreGraph.path_generator.start_position = exploreGraph.path_generator.end_position;
-          exploreGraph.path_generator.end_position = exploreGraph.path_generator.start_position;
+          PathNode temp = A_Star.board[exploreGraph.path_generator.end_position.x][exploreGraph.path_generator.end_position.y];
+
+          exploreGraph.path_generator.end_position = A_Star.board[exploreGraph.path_generator.start_position.x][exploreGraph.path_generator.start_position.y];
+          exploreGraph.path_generator.start_position = temp;
+
           exploreGraph.t1.start();
         }
         else

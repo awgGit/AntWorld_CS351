@@ -30,6 +30,7 @@ public class ExploreGraph
   A_Star path_generator;
   Map<Integer, Boolean> healingToFull;
   ArrayList<Integer> ant_ids;
+  Map<Integer,Integer> phases; // For the food gatherers. Phases 0 through 3.
 
   protected boolean[] pheromone_path_generated;
   boolean[] convoy_sent;
@@ -51,6 +52,7 @@ public class ExploreGraph
     homePath_set = new HashMap<>();
     nest_to_food = new HashMap<>();
     food_to_nest = new HashMap<>();
+    phases = new HashMap<>();
     path_generator = path_tool;
     pheromone_path_generated = new boolean[food_sites_to_broadcast];
     healingToFull = new HashMap<>();
@@ -88,6 +90,7 @@ public class ExploreGraph
     foodPathTaken.put(ant.id, false);
     foodPathTaken.putIfAbsent(ant.id, false);
     healingToFull.putIfAbsent(ant.id, false);
+    phases.put( ant.id, 0 );
   }
 
   // The logic for how to explore the graph. Probably requires some more attention.
@@ -166,6 +169,7 @@ public class ExploreGraph
               action.type = AntAction.AntActionType.PICKUP;
               action.quantity = ant.antType.getCarryCapacity();
               foodPathTaken.put(ant.id, false);
+              System.out.println("Going to try to pick up food");
               return true;
             }
           }
@@ -205,6 +209,7 @@ public class ExploreGraph
             moveAlongPath(ant, action, path_to_target.get(ant.id));
           }
 
+          System.out.println("Trying to go to food");
           return true;
         }
       }
@@ -360,9 +365,97 @@ public class ExploreGraph
           {
             case 0:
             {
+              // 4 STAGES:
+
+              //  1. Go from NEST to FOOD
+              //  2. Randomly explore
+              //  3. Go from RANDOM LOCATION to FOOD
+              //  4. Go from FOOD to NEST
+
+              /*
+                  Pick up if we're next to food.
+                  Walk to food if we aren't full capacity.
+                  If we're full capacity, try to get to the FOOD location.
+                  If we're full capacity and at the FOOD location, get on the PATH back
+                  If we have no food, go to
+               */
+
+              //If we're in state 0: go from nest to food. SWITCH TO PHASE 1 when we ARE ON FOOD LOCATION (end of path)
+              //If we're in state 1: pick up if adjactent - walk towards food - randomly walk. SWITCH TO PHASE 2 when we pick up enough food.
+              //If we're in state 2: A* to food and move along path. SWITCH TO phase 3 when we ARE ON FOOD LOCATION (end of path)
+              //If we're in state 3: go from food to nest, enter nest. SWITCH TO phase 0 when WE ARE ENTERING THE NEST.
+
+              if( ant.antType == AntType.WORKER )
+              {
+                System.out.println("QQQ " + ant.id+" "+phases.get(ant.id));
+              }
+              if( phases.get(ant.id ) == 0 )
+              {
+
+                path_to_target.put(ant.id, nest_to_food.get(0)); // AWG: Here's where we modify the path that the worker is going to take.
+
+                System.out.println("the path: ");
+                PathNode n = A_Star.board[ant.gridX][ant.gridY];
+                while( n != null )
+                {
+                  System.out.println("   -> " + n);
+                  n = nest_to_food.get(0).get(n);
+                }
+
+                Map<PathNode,PathNode> path_to_food =  nest_to_food.get(0);
+                if( path_to_food.get(A_Star.board[ant.gridX][ant.gridY]) == null)
+                {
+                  phases.put(ant.id,1); // NEXT phase, if we're at the end of the path (at the FOOD dropoff node)
+                }
+                else if(moveAlongPath(ant,action, path_to_food));
+                else System.out.println("Not able to move along path, for some reason.");
+              }
+              if( phases.get(ant.id ) == 1 )
+              {
+                if(pickUpFoodAdjacent( ant, action, data ));
+                else if (goToFood( ant, action, data ));
+                else if (MiscFunctions.randomWalk( ant, action ));
+                if(ant.carryUnits > 0 ) phases.put(ant.id,2); // NEXT phase, if we have food.
+              }
+              if( phases.get(ant.id ) == 2 )
+              {
+                // Still need FOOD_NODE.
+                Map<PathNode,PathNode> path_to_path_to_nest =  A_Star.getPath(
+                        A_Star.board[food_list.get(0).gridX][food_list.get(0).gridY], A_Star.board[ant.gridX][ant.gridY], data, ant.id);
+                if( path_to_path_to_nest.get(A_Star.board[ant.gridX][ant.gridY]) == null)
+                {
+                  phases.put(ant.id,3); // NEXT phase, if we're at the end of the path (at the FOOD dropoff node)
+                }
+                else if(moveAlongPath(ant,action, path_to_path_to_nest));
+                else System.out.println("Not able to move along path, for some reason.");
+              }
+              if( phases.get(ant.id ) == 3 )
+              {
+                if( enterNest(ant, action)) // Try to enter the nest if we can.
+                {
+                  phases.put(ant.id,0);
+                }
+                else
+                {
+                  Map<PathNode, PathNode> path_to_food = food_to_nest.get(0);
+                  if (path_to_food.get(A_Star.board[ant.gridX][ant.gridY]) == null)
+                  {
+                    // DO NOTHING, we should have entered the nest at this point.
+                    MiscFunctions.randomWalk(ant,action); // On the wild chance that we're not directly on the nest somehow.
+                  } else if (moveAlongPath(ant, action, path_to_food)) ;
+                  else System.out.println("Not able to move along path, for some reason.");
+                }
+              }
+
+              //if (takingPathToFood(ant, action));
+             // else if(pickUpFoodAdjacent(ant, action, data));
+              //else if(goToFood(ant, action, data));
+              //else if (goExplore(ant, action));
+              //else System.out.println("Nothing is being set for this ant...");
+
               //if(pickUpFoodAdjacent(ant, action, data));
               //else if(goToFood(ant, action, data));
-              if (takingPathToFood(ant, action));
+              //if (takingPathToFood(ant, action));
               //else if (goExplore(ant, action));
             }
             break;
@@ -382,7 +475,7 @@ public class ExploreGraph
             case 2:
               break;
           }
-          if (jitter(ant, action, data))
+          if (jitter(ant, action, data) && ant.antType != AntType.WORKER)
           {
             System.out.println("initiating jitterbug");
           }
@@ -423,9 +516,14 @@ public class ExploreGraph
     return false;
   }
 
+  // We want to return false if we've neared the food.
   private boolean takingPathToFood(AntData ant, AntAction action)
   {
-    if( nest_to_food.get(0).get( A_Star.board[ant.gridX][ant.gridY]) == null ){ return false; }
+    if( nest_to_food.get(0).get( A_Star.board[ant.gridX][ant.gridY] ) == null )
+    {
+      System.out.println("We're already at the end of the path.");
+      return false;
+    }
     System.out.println("going to try to take the path to food: ant position is:  " + ant.gridX + " " + ant.gridY );
     return takePathToFood(ant, action) && ant.carryUnits < ant.antType.getCarryCapacity()/2;
   }
@@ -433,8 +531,8 @@ public class ExploreGraph
   public boolean takePathToFood(AntData ant, AntAction action)
   {
     //<editor-fold desc="for nonnest calls">
-    PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
-    Map<PathNode,PathNode> path;
+//    PathNode antSpot = A_Star.board[ant.gridX][ant.gridY];
+//    Map<PathNode,PathNode> path;
     /*
     if(ant.gridX != nest_x && ant.gridY != nest_y)
     {
@@ -447,6 +545,14 @@ public class ExploreGraph
 
     {
       path_to_target.put(ant.id, nest_to_food.get(0)); // AWG: Here's where we modify the path that the worker is going to take.
+
+      System.out.println("the path: ");
+      PathNode n = A_Star.board[ant.gridX][ant.gridY];
+      while( n != null )
+      {
+        System.out.println("   -> " + n);
+        n = nest_to_food.get(0).get(n);
+      }
       return moveAlongPath(ant, action, nest_to_food.get(0));
     }
   }
@@ -475,8 +581,8 @@ public class ExploreGraph
       {
         food_list.add(new FoodData(
                 GameObject.GameObjectType.FOOD,
-                ((food.gridX - rand.nextInt(30))/BuildGraph.resolution)*BuildGraph.resolution,
-                ((food.gridY - rand.nextInt(30))/BuildGraph.resolution)*BuildGraph.resolution,
+                ((food.gridX /*- rand.nextInt(30)*/)/BuildGraph.resolution)*BuildGraph.resolution, // was 30
+                ((food.gridY /*- rand.nextInt(30)*/)/BuildGraph.resolution)*BuildGraph.resolution, // was 30
                 0
         ));
       }
