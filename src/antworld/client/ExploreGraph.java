@@ -20,7 +20,6 @@ public class ExploreGraph
   Map<Integer,GraphNode> targets;
   Map<Integer,ArrayList<GraphNode>> path_taken; // The *big* nodes traversed.
   Map<Integer,Map<PathNode,PathNode>> path_to_target; // The *grid* (small) nodes traversed.
-  //ArrayList<Integer> ant_ids;
   ArrayList<FoodData> food_list;
 
   Map<Integer, Boolean> homePath_set;
@@ -33,12 +32,12 @@ public class ExploreGraph
   ArrayList<Integer> ant_ids;
 
   protected boolean[] pheromone_path_generated;
-  boolean [] convoy_sent;
+  boolean[] convoy_sent;
   private boolean pheromone_paths_found = false;
   int nest_x, nest_y;
   int food_sites_to_broadcast = 1;
 
-  Thread t1, t2;
+  Thread t1;
 
   // Initialize the maps & lists.
   public ExploreGraph(A_Star path_tool, int nest_x, int nest_y)
@@ -67,7 +66,6 @@ public class ExploreGraph
     this.nest_x = nest_x;
     this.nest_y = nest_y;
     t1 = new Thread(path_generator);
-    t2 = new Thread(path_generator);
   }
 
   // Add an ant to the exploration process : requires that the ant be *on* a node when added.

@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Map;
 import antworld.common.*;
 
 /**
@@ -70,12 +71,21 @@ public class ClientRandomWalk
               && !exploreGraph.convoy_sent[j]
               && exploreGraph.t1.getState() == Thread.State.TERMINATED)
       {
-       exploreGraph.setNestToFoodPath(j);
-       exploreGraph.convoy_sent[j] = true;
-        for(int k = 0; k < convoyAnts; k++)
+        if(exploreGraph.nest_to_food.get(j) == null)
         {
-          AntType type = AntType.WORKER;
-          packetOut.myAntList.add(new AntData(type, myTeam));
+          exploreGraph.setNestToFoodPath(j);
+          exploreGraph.t1 = new Thread();
+          exploreGraph.t1.start();
+        }
+        else
+        {
+          exploreGraph.setFoodToNestPath(j);
+          exploreGraph.convoy_sent[j] = true;
+          for (int k = 0; k < convoyAnts; k++)
+          {
+            AntType type = AntType.WORKER;
+            packetOut.myAntList.add(new AntData(type, myTeam));
+          }
         }
       }
     }
@@ -231,8 +241,6 @@ public class ClientRandomWalk
         e.printStackTrace();
         System.exit(0);
       }
-
-
 
       if (myNestName == null) setupNest(packetIn);
       if (myNestName != packetIn.myNest)
