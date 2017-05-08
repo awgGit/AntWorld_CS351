@@ -30,7 +30,6 @@ public class A_Star
     }
   }
 
-
   // AWG: I needed a simple getPath without the ant stuff still. Same idea as the other one but with fewer args, overload
   public static Map<PathNode,PathNode> getPath(PathNode start_position, PathNode end_position)
   {
@@ -100,15 +99,7 @@ public class A_Star
     return came_from;
   }
 
-
-  /**
-   * To make things simpler I say that the start postion is the nest and the end position is the ants location
-   * @param start_position - the nests position!
-   * @param end_position-  the ants postion!
-   * @param ptc the information with regard to the ants.
-   * @param antID the id of the ant to distinguish it from the other ants.
-   * @return - the shortest path from the nest to the ant.
-   */
+  // Todo: getPath should also dodge food - I forgot to add that back.
   public static Map<PathNode,PathNode> getPath(PathNode start_position, PathNode end_position, PacketToClient ptc, int antID)
   {
     if( start_position == null) return null;
@@ -204,9 +195,6 @@ public class A_Star
     else return( Math.abs(a.x-b.x)+Math.abs(a.y-b.y));
   }
 
-  /**
-   * This method builds 2 boards for us to use A_Star on. We will exclude water on the map because it is not a valid space.
-   */
   public static void buildBoard()
   {
     // Read through map and build the board:

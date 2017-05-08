@@ -1,24 +1,30 @@
+/*
+Worker (state) machine:
+  Sends workers out to gather food from a single food site,
+  contingent upon explorers discovering a food site.
+ */
+
 package antworld.client;
 
 import antworld.common.AntAction;
 import antworld.common.AntData;
 import antworld.common.Direction;
 import antworld.common.PacketToClient;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class WorkerMachine
+class WorkerMachine
 {
-  ArrayList<Integer> ant_ids;
-  HashMap<Integer,Integer> ant_phases;
-  HashMap<Integer,PathNode> target_PathNodes;
+  private ArrayList<Integer> ant_ids;
+  private HashMap<Integer,Integer> ant_phases;
+  private HashMap<Integer,PathNode> target_PathNodes;
 
   private int nest_x;
   private int nest_y;
 
-  public WorkerMachine( int nx, int ny )
+  // Initializes all the nest & state variables for WorkerMachine.
+  WorkerMachine( int nx, int ny )
   {
     nest_x = nx;
     nest_y = ny;
@@ -27,7 +33,8 @@ public class WorkerMachine
     target_PathNodes = new HashMap<>();
   }
 
-  public void addAnt ( AntData ant )
+  // Configures a single ant to be controlled by WorkerMachine.
+  void addAnt ( AntData ant )
   {
     if( ant_ids.contains(ant.id) ) return;
     ant_ids.add( ant.id );
@@ -37,40 +44,8 @@ public class WorkerMachine
     ant_phases.put( ant.id, 0 );
   }
 
-  private boolean moveFoodToNest(AntData ant, AntAction action )
-  {
-    // If we're moving from food to nest, move our target node along appropriately.
-    if(ant.gridX == target_PathNodes.get(ant.id).x && ant.gridY == target_PathNodes.get(ant.id).y ){
-      target_PathNodes.put( ant.id, PathCalculator.nest_to_food.get(target_PathNodes.get(ant.id))); }
-
-    // If the target is null, we've hit the end of the path.
-    if( target_PathNodes.get( ant.id ) == null )
-    {
-      ant_phases.put( ant.id, 1 );
-      target_PathNodes.put( ant.id, PathCalculator.food_site_location );
-      return false;
-    }
-    return moveAlongPath( ant, action, A_Star.getPath( target_PathNodes.get(ant.id), A_Star.board[ant.gridX][ant.gridY]));
-  }
-
-  private boolean moveNestToFood(AntData ant, AntAction action )
-  {
-    // If we're moving from food to nest, move our target node along appropriately.
-    if(ant.gridX == target_PathNodes.get(ant.id).x && ant.gridY == target_PathNodes.get(ant.id).y ){
-      target_PathNodes.put( ant.id, PathCalculator.food_to_nest.get(target_PathNodes.get(ant.id))); }
-
-    // If the target is null, we've hit the end of the path.
-    if( target_PathNodes.get( ant.id ) == null )
-    {
-      ant_phases.put( ant.id, 0 );
-      target_PathNodes.put( ant.id, PathCalculator.nest_location );
-      return false;
-    }
-    return moveAlongPath( ant, action, A_Star.getPath( target_PathNodes.get(ant.id), A_Star.board[ant.gridX][ant.gridY]));
-  }
-
-
-  public void setAntActions(PacketToClient ptc )
+  // Here's where we decide the states & state transitions for workers.
+  void setAntActions(PacketToClient ptc )
   {
     // Don't use the workers until we've got paths ready for them.
     if( PathCalculator.paths_ready == false) return;
@@ -101,7 +76,7 @@ public class WorkerMachine
           if( MiscFunctions.attack( ant, action, ptc));
           else if( MiscFunctions.healSelf( ant, action ));
           else if( MiscFunctions.pickUpFoodAdjacent( ant, action, ptc ));
-          // Todo: random walk is kinda lame, we might be able to do better
+            // Todo: random walk is kinda lame, we might be able to do better
           else if (MiscFunctions.randomWalk( ant, action ));
           if( ant.carryUnits > 0 )
           {
@@ -130,6 +105,45 @@ public class WorkerMachine
     }
   }
 
+  // Moves a worker along the food-to-nest path.
+  /* Both this method and its counterpart (moveNestToFood) are robust to diversion -
+  that is to say, jittering and healing won't cause them to lose their way. */
+  private boolean moveFoodToNest(AntData ant, AntAction action )
+  {
+    // If we're moving from food to nest, move our target node along appropriately.
+    if(ant.gridX == target_PathNodes.get(ant.id).x && ant.gridY == target_PathNodes.get(ant.id).y ){
+      target_PathNodes.put( ant.id, PathCalculator.nest_to_food.get(target_PathNodes.get(ant.id))); }
+
+    // If the target is null, we've hit the end of the path.
+    if( target_PathNodes.get( ant.id ) == null )
+    {
+      ant_phases.put( ant.id, 1 );
+      target_PathNodes.put( ant.id, PathCalculator.food_site_location );
+      return false;
+    }
+    return moveAlongPath( ant, action, A_Star.getPath( target_PathNodes.get(ant.id), A_Star.board[ant.gridX][ant.gridY]));
+  }
+
+  // Moves a worker along the nest-to-food path.
+    /* Both this method and its counterpart (moveFoodToNest) are robust to diversion -
+  that is to say, jittering and healing won't cause them to lose their way. */
+  private boolean moveNestToFood(AntData ant, AntAction action )
+  {
+    // If we're moving from food to nest, move our target node along appropriately.
+    if(ant.gridX == target_PathNodes.get(ant.id).x && ant.gridY == target_PathNodes.get(ant.id).y ){
+      target_PathNodes.put( ant.id, PathCalculator.food_to_nest.get(target_PathNodes.get(ant.id))); }
+
+    // If the target is null, we've hit the end of the path.
+    if( target_PathNodes.get( ant.id ) == null )
+    {
+      ant_phases.put( ant.id, 0 );
+      target_PathNodes.put( ant.id, PathCalculator.nest_location );
+      return false;
+    }
+    return moveAlongPath( ant, action, A_Star.getPath( target_PathNodes.get(ant.id), A_Star.board[ant.gridX][ant.gridY]));
+  }
+
+  // Provides the nest step from one's current position using an A* hashmap.
   private boolean moveAlongPath(AntData ant, AntAction action, Map<PathNode,PathNode> path)
   {
     Direction dir;
@@ -145,13 +159,7 @@ public class WorkerMachine
       }
       if (nextStep == null)
       {
-        System.out.println("I would recalculate, but I can't. :(");
-//        GraphNode target = target_GraphNodes.get(ant.id);
-//        PathNode antSpot2 = A_Star.board[ant.gridX][ant.gridY];
-//        PathNode finalSpot = A_Star.board[target.x][target.y];
-//        path = A_Star.getPath(finalSpot, antSpot);
-//        path_to_target.put(ant.id, path);
-//        nextStep = path.get(antSpot2);
+        System.out.println("I would recalculate, but in this instance I can't.");
       }
       if ((ant.gridY - 1 == nextStep.y) && (ant.gridX == nextStep.x))
       {

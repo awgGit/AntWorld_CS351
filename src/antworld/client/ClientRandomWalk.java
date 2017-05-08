@@ -54,12 +54,11 @@ public class ClientRandomWalk
   //</editor-fold>
 
   // Our variables
-  ExplorerMachine explorerMachine;
-  WorkerMachine workerMachine;
-  BuildGraph buildGraph;
-  PathCalculator pathCalculator;
-
-  boolean spawned_workers = false;
+  private ExplorerMachine explorerMachine;
+  private WorkerMachine workerMachine;
+  private BuildGraph buildGraph;
+  private PathCalculator pathCalculator;
+  private boolean spawned_workers = false;
 
   // Each game tick / packet sent from the server ...
   private PacketToServer chooseActionsOfAllAnts(PacketToClient packetIn)
@@ -71,9 +70,9 @@ public class ClientRandomWalk
       if( ant.antType == AntType.EXPLORER ) explorerMachine.addAnt(ant);
       if( ant.antType == AntType.WORKER ) workerMachine.addAnt(ant);
     }
-    explorerMachine.setAntActions( packetIn ); // Then we set all their actions
-    workerMachine.setAntActions( packetIn );
-    pathCalculator.calculatePathsWhenReady(); // Calculate the paths from nest to food and food to nest.
+    pathCalculator.calculatePathsWhenReady(); // Calculate food-nest paths when able.
+    explorerMachine.setAntActions( packetIn ); // Set actions for the explorers.
+    workerMachine.setAntActions( packetIn );  // Set actions for the workers.
 
     // Spawn some workers when we're ready for them.
     if( !spawned_workers && PathCalculator.paths_ready )
@@ -155,13 +154,12 @@ public class ClientRandomWalk
     System.out.println("ClientRandomWalk: ==== Nest Assigned ===>: " + myNestName);
 
     // Build the two graphs we need.
-    A_Star.buildBoard();
-    buildGraph = new BuildGraph();
+    A_Star.buildBoard(); // Dense (A*)
+    buildGraph = new BuildGraph(); // Sparse (DFS interpolated with A*)
 
     explorerMachine = new ExplorerMachine( centerX, centerY );
     workerMachine = new WorkerMachine( centerX, centerY );
     pathCalculator = new PathCalculator( centerX, centerY );
-    //GenerateMaps.generateImage( centerX, centerY );
   }
 
   //<editor-fold desc="Strictly for communication with the server. Don't need to tinker with this.">

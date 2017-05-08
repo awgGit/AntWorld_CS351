@@ -1,19 +1,27 @@
+/*
+PathCalculator:
+  Once the explorers have found a food site and retracted into the nest,
+  this class is called upon to calculate the A* paths from food to nest and
+  vice-versa (nest to food).
+ */
+
 package antworld.client;
 import java.util.Map;
 
-public class PathCalculator
+class PathCalculator
 {
 
-  public static boolean paths_ready = false;
+  // All should be broadly accessible (hence static)
   static Map<PathNode,PathNode> food_to_nest = null;
   static Map<PathNode,PathNode> nest_to_food = null;
-
-  static PathNode nest_location;
+  static boolean paths_ready = false;
   static PathNode food_site_location;
+  static PathNode nest_location;
 
   private int nest_x;
   private int nest_y;
 
+  // Initializes all the nest & state variables for PathCalculator.
   PathCalculator ( int nx, int ny )
   {
     nest_x = nx;

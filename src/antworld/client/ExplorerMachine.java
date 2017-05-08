@@ -1,3 +1,9 @@
+/*
+Explorer (state) machine:
+  Sends explorers out along the GraphNode graph.
+  When food site is found, explorers retreat into the nest.
+ */
+
 package antworld.client;
 
 import antworld.common.*;
@@ -6,26 +12,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-/*
-Explorer machine:
-  Sends explorers out along the GraphNode graph.
-  When food it found, explorers retreat into the nest.
- */
-public class ExplorerMachine
+class ExplorerMachine
 {
 
-  public static boolean food_was_found = false;
-  public static boolean all_underground = false;
-  public static PathNode food_location = null;
+  static boolean food_was_found = false;
+  static boolean all_underground = false;
+  static PathNode food_location = null;
 
-  HashMap<Integer,GraphNode> target_GraphNodes;
-  HashMap<Integer,PathNode> target_PathNodes;
-  HashMap<Integer,ArrayList<GraphNode>> path_taken;
-  HashMap<Integer, Map<PathNode, PathNode>> path_to_target;
-  ArrayList<Integer> ant_ids;
+  private HashMap<Integer,GraphNode> target_GraphNodes;
+  private HashMap<Integer,PathNode> target_PathNodes;
+  private HashMap<Integer,ArrayList<GraphNode>> path_taken;
+  private HashMap<Integer, Map<PathNode, PathNode>> path_to_target;
+  private ArrayList<Integer> ant_ids;
   private int nest_x;
   private int nest_y;
 
+  // Initializes all the nest & state variables for ExplorerMachine.
   public ExplorerMachine( int nx, int ny )
   {
     nest_x = nx;
@@ -37,6 +39,7 @@ public class ExplorerMachine
     path_taken = new HashMap<>();
   }
 
+  // Configures a single ant to be controlled by ExplorerMachine.
   public void addAnt( AntData ant )
   {
     if( ant_ids.contains(ant.id) ) return;
@@ -66,17 +69,7 @@ public class ExplorerMachine
 
   }
 
-  // Here's where we decide the state for explorers.
-  /*
-        When *exploring* :
-        First, try to exit the nest.
-        Next, heal if you're dying.
-        Next, try to explore the graph.
-
-        When *retracting* :
-        First, try to enter the nest.
-        Next, try to collapse back to your previous graphnode.
-   */
+  // Here's where we decide the states & state transitions for explorers.
   public void setAntActions( PacketToClient ptc )
   {
     // We don't use these ants if we've already found food and they've retracted.
@@ -202,6 +195,7 @@ public class ExplorerMachine
     return moveAlongPath( ant, action, A_Star.getPath( target_PathNodes.get(ant.id), A_Star.board[ant.gridX][ant.gridY]));
   }
 
+  // Ascertain whether or not all *explorer* ants are underground.
   private boolean checkIfAllUnderground( PacketToClient ptc )
   {
     for( AntData ant : ptc.myAntList )
@@ -212,6 +206,7 @@ public class ExplorerMachine
     return true;
   }
 
+  // Provides the nest step from one's current position using an A* hashmap.
   private boolean moveAlongPath(AntData ant, AntAction action, Map<PathNode,PathNode> path)
   {
     Direction dir;
