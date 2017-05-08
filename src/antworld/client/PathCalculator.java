@@ -6,6 +6,8 @@ PathCalculator:
  */
 
 package antworld.client;
+import antworld.common.Constants;
+
 import java.util.Map;
 
 class PathCalculator
@@ -37,11 +39,19 @@ class PathCalculator
             ExplorerMachine.food_was_found &&
             ExplorerMachine.food_location != null )
     {
-      // Todo: We may wish to modify the site location so it's not *on* the food.
-      food_site_location = A_Star.board
-              [ ExplorerMachine.food_location.x + 1 ]
-              [ ExplorerMachine.food_location.y + 1 ];
+      // Calculate the location for the ants to travel to repeatedly.
+      // It can't be on the food (or they'll never stop trying to reach the food)
+      // And it can't be on a null location (or they'll never be able to reach that location)
+      int fx = ExplorerMachine.food_location.x;
+      int fy = ExplorerMachine.food_location.y;
 
+      while( A_Star.board[ fx ][ fy ] == null || (fx == ExplorerMachine.food_location.x && fy == ExplorerMachine.food_location.y))
+      {
+        fx = ExplorerMachine.food_location.x + Constants.random.nextInt(2) - 1;
+        fy = ExplorerMachine.food_location.y + Constants.random.nextInt(2) - 1;
+      }
+
+      food_site_location = A_Star.board[ fx ][ fy ];
       nest_location =  A_Star.board[ nest_x ][ nest_y ];
 
       System.out.println("Food site location: " + food_site_location);
