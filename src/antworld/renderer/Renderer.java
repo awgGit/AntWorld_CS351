@@ -262,7 +262,6 @@ public class Renderer extends JPanel implements KeyListener, MouseListener, Mous
             double y = ant.gridY - (int) (antScale / 2);
             Rectangle2D.Double shape = new Rectangle2D.Double(x, y, antScale, antScale);
             gfx.fill(shape);
-
             // int xx = (int)((mouseX - translateX)/scale);
             // int yy = (int)((mouseY - translateY)/scale);
             // if (nest.isNearNest(x,y))

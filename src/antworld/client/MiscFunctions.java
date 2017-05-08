@@ -5,9 +5,12 @@
 
 package antworld.client;
 import antworld.common.*;
+import java.util.HashMap;
 
 public class MiscFunctions
 {
+  public static HashMap<Integer, Boolean> healToFull = new HashMap<>();
+
   public static boolean randomWalk(AntData ant, AntAction action )
   {
     action.direction = Direction.getRandomDir();
@@ -32,11 +35,17 @@ public class MiscFunctions
   {
     System.out.println(ant.antType.getMaxHealth());
     // Don't heal if we don't need to. (High watermark)
-    if( ant.health >= ant.antType.getMaxHealth() ) return false;
+    if( ant.health >= ant.antType.getMaxHealth() && healToFull.get(ant.id) )
+    {
+      healToFull.put(ant.id, false);
+      return false;
+    }
 
     // Heal if we have enough units and we're at sufficiently low health.
     if(ant.carryUnits > 0 && ant.carryType == GameObject.GameObjectType.WATER)
     {
+      if(!healToFull.get(ant.id)) healToFull.put(ant.id, true);
+
       action.type = AntAction.AntActionType.HEAL;
       action.direction = null;
       action.quantity = ant.carryUnits;
@@ -45,7 +54,7 @@ public class MiscFunctions
 
     // Don't go off path to heal unless we need to. (Low watermark)
     // Todo: I should use Mike's strategy here. Needs external state though, so I'll replace that later.
-    if( ant.health > ant.antType.getMaxHealth()/3 ) return false;
+    if( ant.health > ant.antType.getMaxHealth()/3 && !healToFull.get(ant.id)) return false;
 
     // Point ourselves towards water.
     action.direction = Direction.values()[ (int) (Math.floor( Raycasting.getBearingToWater(ant.gridX, ant.gridY) )/45.0) ];
@@ -57,8 +66,10 @@ public class MiscFunctions
             && Constants.random.nextBoolean() ) // So maybe move closer.
     {
       //action.direction = //Direction.getRandomDir(); // For now... I mean, it should work, but whatever.
+      int pickupAmt = ant.antType.getMaxHealth() - ant.health;
+
       action.type = AntAction.AntActionType.PICKUP;
-      action.quantity = ant.antType.getCarryCapacity();
+      action.quantity = pickupAmt;
 
       // If we've moved off the path, then we'll need to recalculate it.
       // COM // recalculatePath( ant ); // We'll only do this once per heal. This should in theory work...

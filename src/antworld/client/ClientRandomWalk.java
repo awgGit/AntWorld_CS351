@@ -69,6 +69,7 @@ public class ClientRandomWalk
     {
       if( ant.antType == AntType.EXPLORER ) explorerMachine.addAnt(ant);
       if( ant.antType == AntType.WORKER ) workerMachine.addAnt(ant);
+      if( !MiscFunctions.healToFull.containsKey(ant.id)) MiscFunctions.healToFull.put(ant.id, false);
     }
     pathCalculator.calculatePathsWhenReady(); // Calculate food-nest paths when able.
     explorerMachine.setAntActions( packetIn ); // Set actions for the explorers.
@@ -284,8 +285,7 @@ public class ClientRandomWalk
     boolean reconnection = false;
     if (args.length > 0) serverHost = args[args.length -1];
 
-    //TeamNameEnum team = TeamNameEnum.RandomWalkers;
-    TeamNameEnum team = TeamNameEnum.SimpleSolid_3;
+    TeamNameEnum team = TeamNameEnum.Carpenter;
     if (args.length > 1)
     { team = TeamNameEnum.getTeamByString(args[0]);
     }

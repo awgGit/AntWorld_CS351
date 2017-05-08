@@ -1,9 +1,11 @@
 # AntWorld
 
 #Introduction:
- The team of Mike Mazzella, Andre Green, Ryan Vary, and Shea Nord have written a simple AI that will explore the world, find food, and bring it back to the nest.
+
+The team of Mike Mazzella, Andre Green, Ryan Vary, and Shea Nord have written a simple AI that will explore the world, find food, and bring it back to the nest.
 
 #How to Use the Program:
+
 This project contains two main() methods: one for the server: antworld.server.AntWorld
 and one for the client: antworld.client.ClientRandomWalk.
 The server needs to be started first.
