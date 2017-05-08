@@ -89,6 +89,10 @@ class WorkerMachine
           else
           {
             if( MiscFunctions.attack(ant,action,ptc));
+            else if( MiscFunctions.pickUpFoodAdjacent( ant, action, ptc ))
+            {
+              foodPathTaken.put(ant.id, false);
+            }
             else if( MiscFunctions.healSelf( ant, action ));
             else if (moveFoodToNest( ant, action ));
             if( MiscFunctions.jitter( ant, action, ptc ));
@@ -120,6 +124,10 @@ class WorkerMachine
           else
           {
             if( MiscFunctions.attack( ant, action, ptc));
+            else if( MiscFunctions.pickUpFoodAdjacent( ant, action, ptc ))
+            {
+              foodPathTaken.put(ant.id, false);
+            }
             else if( MiscFunctions.healSelf( ant, action ));
             else if (moveNestToFood( ant, action ));
             if( MiscFunctions.jitter( ant, action, ptc ));

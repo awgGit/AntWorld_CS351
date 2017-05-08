@@ -73,7 +73,7 @@ class ExplorerMachine
   public void setAntActions( PacketToClient ptc )
   {
     // We don't use these ants if we've already found food and they've retracted.
-    if( food_was_found && all_underground ) { return; }
+    // if( food_was_found && all_underground ) { return; }
 
     // Check if we've found any food sites, avoiding marking dead bodies as valid food sites.
     if( ptc.foodList != null )
@@ -89,7 +89,7 @@ class ExplorerMachine
     }
 
     // Check if all the ants are underground yet.
-    all_underground = checkIfAllUnderground( ptc );
+    all_underground = true; //checkIfAllUnderground( ptc );
 
     AntAction action;
     for( AntData ant : ptc.myAntList )
